@@ -167,8 +167,14 @@ def new_valid(model, testing_loader):
             tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
             eval_accuracy += tmp_eval_accuracy
 
-    labels = [[ids_to_labels[id.item()] for id in labels] for labels in eval_labels]
-    predictions = [[ids_to_labels[id.item()] for id in preds] for preds in eval_preds]
+    labels = [
+        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in labels]
+        for labels in eval_labels
+    ]
+    predictions = [
+        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in preds]
+        for preds in eval_preds
+    ]
 
     eval_loss = eval_loss / nb_eval_steps
     eval_accuracy = eval_accuracy / nb_eval_steps
@@ -235,30 +241,47 @@ if __name__ == '__main__':
         'sentence': [separator.join(s) for s in sentences],
         'word_labels': [separator.join(l) for l in labels]
     })
-
+    # 测试df是否正确
+    print("The sentence in df are:")
     print(df['sentence'])
+    print("The word_labels in df are:")
+    print(df['word_labels'])
 
     # 划分训练集和测试集
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
     MAX_LEN = 128
-    BATCH_SIZE = 64
-    # fixme EPOCHS = 3
-    EPOCHS = 1
+    BATCH_SIZE = 96
+    EPOCHS = 5
 
     # 创建数据集和数据加载器
     training_set = new_dataset(train_df.reset_index(drop=True), tokenizer, MAX_LEN)
     testing_set = new_dataset(test_df.reset_index(drop=True), tokenizer, MAX_LEN)
+    # 打印数据集大小
+    print(f"训练数据集规模: {len(training_set)}")
+    print(f"测试数据集规模: {len(testing_set)}")
 
+    # 创建数据加载器
     train_params = {'batch_size': BATCH_SIZE, 'shuffle': True, 'num_workers': 0, 'collate_fn': collate_fn}
     test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0, 'collate_fn': collate_fn}
+    print(f"训练集加载器参数: {train_params}")
+    print(f"测试集加载器参数: {test_params}")
 
     training_loader = DataLoader(training_set, **train_params)
     testing_loader = DataLoader(testing_set, **test_params)
 
+    # 打印第一个训练批次的键和形状
+    first_train_batch = next(iter(training_loader))
+    print(f"First training batch keys: {first_train_batch.keys()}")
+    print(f"First training batch 'input_ids' shape: {first_train_batch['input_ids'].shape}")
+    print(f"First training batch 'labels' shape: {first_train_batch['labels'].shape}")
+
     # 初始化模型
     model = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=len(labels_to_ids))
     model.to(device)
+    # 打印模型初始化信息
+    print(f"Model initialized with {len(labels_to_ids)} labels.")
+    print(f"Model is using device: {device}")
 
     # 定义优化器
     optimizer = AdamW(model.parameters(), lr=3e-5)
@@ -281,31 +304,26 @@ if __name__ == '__main__':
     flattened_true_labels = [label for sublist in labels_list for label in sublist]
     flattened_predictions = [pred for sublist in preds_list for pred in sublist]
 
-    # 生成类别名称列表
-    label_names = [ids_to_labels[i] for i in range(len(ids_to_labels))]
+    # 获取数据中的唯一标签
+    unique_labels = sorted(set(flattened_true_labels + flattened_predictions))
+
+    # 打印数据中唯一标签的数量
+    print(f"数据中的唯一标签数量: {len(unique_labels)}")
 
     # 打印分类报告
-    report = classification_report(flattened_true_labels, flattened_predictions, target_names=label_names)
+    report = classification_report(
+        flattened_true_labels,
+        flattened_predictions,
+        labels=unique_labels,
+        target_names=unique_labels,
+        zero_division=0
+    )
     print("\n========= 分类报告 =========")
     print(report)
 
     # 统计BIO规则违例
     print("\n========= 统计BIO规则违例 =========")
-    violations = 0
-    total_preds = 0
-    previous_label = 'O'
-
-    for i in range(len(labels_list)):
-        label = labels_list[i]
-        pred = preds_list[i]
-
-        if pred.startswith('I-'):
-            if not (previous_label.endswith(pred[2:]) and (
-                    previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                violations += 1
-        previous_label = pred
-        total_preds += 1
-
+    violations, total_preds = BIO_violations(preds_list)
     violation_ratio = violations / total_preds
     print(f"BIO规则违例数: {violations}")
     print(f"预测标签总数: {total_preds}")

@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
@@ -17,16 +18,16 @@ labels_to_ids = {
     'I-org': 6,
     'B-loc': 7,
     'I-loc': 8,
-    'B-tim': 9,
-    'I-tim': 10,
-    'B-art': 11,
-    'I-art': 12,
-    'B-eve': 13,
-    'I-eve': 14,
-    'B-geo': 15,
-    'I-geo': 16,
-    'B-nat': 17,
-    'I-nat': 18,
+    "B-tim": 9,
+    "I-tim": 10,
+    "B-art": 11,
+    "I-art": 12,
+    "B-eve": 13,
+    "I-eve": 14,
+    "B-geo": 15,
+    "I-geo": 16,
+    "B-nat": 17,
+    "I-nat": 18,
     # 添加其他标签的编码...
 }
 
@@ -35,7 +36,7 @@ ids_to_labels = {id: label for label, id in labels_to_ids.items()}
 
 
 # 定义数据集类
-class NERDataset(Dataset):
+class new_dataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_len):
         self.len = len(dataframe)
         self.data = dataframe
@@ -49,8 +50,9 @@ class NERDataset(Dataset):
 
         # 检查句子和词标签长度是否匹配
         if len(sentence) != len(word_labels):
-            print(f"索引 {index} 的句子和标签长度不匹配")
-            return None  # 跳过该样本
+            print(
+                f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
+            return None  # skip this example
 
         # 使用tokenizer对句子进行编码
         encoding = self.tokenizer(
@@ -93,47 +95,68 @@ class NERDataset(Dataset):
 
 
 # 定义验证函数
-def validate(model, dataloader, device):
+def new_valid(model, testing_loader):
+    # put model in evaluation mode
     model.eval()
+
     eval_loss, eval_accuracy = 0, 0
+    nb_eval_examples, nb_eval_steps = 0, 0
     eval_preds, eval_labels = [], []
 
     with torch.no_grad():
-        for idx, batch in enumerate(dataloader):
-            # 获取输入数据并移动到设备上
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+        for idx, batch in enumerate(testing_loader):
 
-            # 前向传播
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            loss, logits = outputs.loss, outputs.logits
+            ids = batch['input_ids'].to(device, dtype=torch.long)
+            mask = batch['attention_mask'].to(device, dtype=torch.long)
+            labels = batch['labels'].to(device, dtype=torch.long)
+
+            outputs = model(input_ids=ids, attention_mask=mask, labels=labels)
+            loss = outputs[0]
+            eval_logits = outputs[1]
             eval_loss += loss.item()
 
-            # 计算预测结果
-            active_logits = logits.view(-1, model.num_labels)
-            flattened_predictions = torch.argmax(active_logits, axis=1)
+            nb_eval_steps += 1
+            nb_eval_examples += labels.size(0)
 
-            # 只考虑非填充部分的标签
-            labels_flat = labels.view(-1)
-            active_labels = labels_flat != -100
-            labels_flat = labels_flat[active_labels]
-            predictions = flattened_predictions[active_labels]
+            if idx % 100 == 0:
+                loss_step = eval_loss / nb_eval_steps
+                print(f"Validation loss per 100 evaluation steps: {loss_step}")
 
-            eval_labels.extend(labels_flat.cpu().numpy())
-            eval_preds.extend(predictions.cpu().numpy())
+            # compute evaluation accuracy
+            flattened_targets = labels.view(-1)  # shape (batch_size * seq_len,)
+            active_logits = eval_logits.view(-1, model.num_labels)  # shape (batch_size * seq_len, num_labels)
+            flattened_predictions = torch.argmax(active_logits, axis=1)  # shape (batch_size * seq_len,)
 
-    avg_loss = eval_loss / len(dataloader)
-    print(f"验证损失: {avg_loss}")
+            # only compute accuracy at active labels
+            active_accuracy = mask.view(-1) != 0  # shape (batch_size * seq_len)
 
-    # 将ID转换为标签
-    eval_labels = [ids_to_labels[id] for id in eval_labels]
-    eval_preds = [ids_to_labels[id] for id in eval_preds]
+            labels = torch.masked_select(flattened_targets, active_accuracy)
+            predictions = torch.masked_select(flattened_predictions, active_accuracy)
 
-    return eval_labels, eval_preds
+            eval_labels.append(labels)
+            eval_preds.append(predictions)
+
+            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
+            eval_accuracy += tmp_eval_accuracy
+
+    labels = [
+        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in labels]
+        for labels in eval_labels
+    ]
+    predictions = [
+        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in preds]
+        for preds in eval_preds
+    ]
+
+    eval_loss = eval_loss / nb_eval_steps
+    eval_accuracy = eval_accuracy / nb_eval_steps
+    print(f"Validation Loss: {eval_loss}")
+    print(f"Validation Accuracy: {eval_accuracy}")
+
+    return labels, predictions
 
 
-# 定义BIO规则违例统计函数
+# 定义BIO违例统计函数
 def BIO_violations(predictions):
     violations = 0
     total_preds = 0
@@ -151,9 +174,11 @@ def BIO_violations(predictions):
     return violations, total_preds
 
 
-# 自定义collate函数，跳过返回None的样本
+# 定义自定义的collate函数，跳过返回None的样本
 def collate_fn(batch):
+    # 过滤掉返回 None 的样本
     batch = [item for item in batch if item is not None]
+    # 使用默认的 collate 函数将剩余的样本组合成一个批量
     return default_collate(batch)
 
 
@@ -165,14 +190,18 @@ if __name__ == '__main__':
     # 初始化tokenizer
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
-    # 读取数据集
-    data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    # 读取数据，使用本地的ner_dataset.csv文件
+    # data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    # 使用Google Colab
+    data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    print("数据已加载")
 
     # 数据预处理
     data['Sentence #'] = data['Sentence #'].ffill()
     data['Word'] = data['Word'].fillna('O').astype(str)
     data['Tag'] = data['Tag'].fillna('O').astype(str)
 
+    # 提取句子和标签
     sentences = data.groupby('Sentence #')['Word'].apply(list).values
     labels = data.groupby('Sentence #')['Tag'].apply(list).values
 
@@ -182,43 +211,67 @@ if __name__ == '__main__':
         'sentence': [separator.join(s) for s in sentences],
         'word_labels': [separator.join(l) for l in labels]
     })
+    # 测试df是否正确
+    print("The sentence in df are:")
+    print(df['sentence'])
+    print("The word_labels in df are:")
+    print(df['word_labels'])
 
     # 划分训练集和测试集
-    _, test_df = train_test_split(df, test_size=0.2, random_state=42)
+    train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
     MAX_LEN = 128
-    BATCH_SIZE = 32
+    BATCH_SIZE = 96
 
-    # 创建测试集和数据加载器
-    test_dataset = NERDataset(test_df.reset_index(drop=True), tokenizer, MAX_LEN)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
+    # 创建数据集和数据加载器
+    testing_set = new_dataset(test_df.reset_index(drop=True), tokenizer, MAX_LEN)
 
-    # 加载模型并加载保存的权重
+    test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0, 'collate_fn': collate_fn}
+
+    testing_loader = DataLoader(testing_set, **test_params)
+
+    # 初始化模型
     model = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=len(labels_to_ids))
-    model.load_state_dict(torch.load('model_weights.pth', map_location=device))
     model.to(device)
+
+    # 加载模型的状态字典
+    # model.load_state_dict(torch.load('model_weights.pth', map_location=device))
+    # 使用Google Colab
+    model.load_state_dict(torch.load('/content/model_weights.pth', map_location=device))
+    print("模型权重已加载")
 
     # 验证模型
     print("\n========= 验证模型 =========")
-    true_labels, predictions = validate(model, test_loader, device)
+    labels_list, preds_list = new_valid(model, testing_loader)
 
     # 生成分类报告
+
+    # 将 labels_list 和 preds_list 展平成一个列表
+    flattened_true_labels = [label for sublist in labels_list for label in sublist]
+    flattened_predictions = [pred for sublist in preds_list for pred in sublist]
+    print("\n展平标签和预测")
+
+    # 获取数据中的唯一标签
+    unique_labels = sorted(set(flattened_true_labels + flattened_predictions))
+
+    # 打印数据中唯一标签的数量
+    print(f"数据中的唯一标签数量: {len(unique_labels)}")
+
+    # 打印分类报告
+    report = classification_report(
+        flattened_true_labels,
+        flattened_predictions,
+        labels=unique_labels,
+        target_names=unique_labels,
+        zero_division=0
+    )
     print("\n========= 分类报告 =========")
-    print(classification_report(true_labels, predictions, labels=list(labels_to_ids.values()), zero_division=0))
+    print(report)
 
     # 统计BIO规则违例
     print("\n========= 统计BIO规则违例 =========")
-    # 将预测结果分组
-    grouped_preds = []
-    idx = 0
-    for seq in test_dataset:
-        seq_len = len(seq['labels'][seq['labels'] != -100])
-        pred_seq = predictions[idx:idx + seq_len]
-        grouped_preds.append(pred_seq)
-        idx += seq_len
-
-    violations, total_preds = BIO_violations(grouped_preds)
-    violation_ratio = violations / total_preds if total_preds > 0 else 0
+    violations, total_preds = BIO_violations(preds_list)
+    violation_ratio = violations / total_preds
     print(f"BIO规则违例数: {violations}")
     print(f"预测标签总数: {total_preds}")
     print(f"BIO规则违例比例: {violation_ratio:.4f}")
