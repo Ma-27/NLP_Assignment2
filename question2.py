@@ -1,8 +1,10 @@
 import pandas as pd
 import torch
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.dataloader import default_collate
 from tqdm import tqdm
 from transformers import BertTokenizerFast, BertForTokenClassification, AdamW
 
@@ -44,8 +46,14 @@ class new_dataset(Dataset):
 
     def __getitem__(self, index):
         # 获取句子和对应的词标签
-        sentence = self.data.sentence[index].strip().split()
-        word_labels = self.data.word_labels[index].split(",")
+        sentence = self.data.sentence[index].split(separator)
+        word_labels = self.data.word_labels[index].split(separator)
+
+        # 检查句子和词标签长度是否匹配
+        if len(sentence) != len(word_labels):
+            print(
+                f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
+            return None  # skip this example
 
         # 使用tokenizer对句子进行编码
         encoding = self.tokenizer(
@@ -188,6 +196,14 @@ def BIO_violations(predictions):
     return violations, total_preds
 
 
+# 定义自定义的collate函数,跳过返回None的样本
+def collate_fn(batch):
+    # 过滤掉返回 None 的样本
+    batch = [item for item in batch if item is not None]
+    # 使用默认的 collate 函数将剩余的样本组合成一个批量
+    return default_collate(batch)
+
+
 # 主函数
 if __name__ == '__main__':
     # 初始化设备
@@ -197,9 +213,9 @@ if __name__ == '__main__':
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
     # 读取数据,使用实验课的数据集
-    data = pd.read_csv('ner_dataset.csv', encoding='latin1')
+    # data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
     # 使用Google Colab
-    # data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1')
+    data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
 
     # data = data.fillna(method='ffill')
     # 使用前向填充填补空的'Sentence #'列
@@ -213,8 +229,12 @@ if __name__ == '__main__':
     sentences = data.groupby('Sentence #')['Word'].apply(list).values
     labels = data.groupby('Sentence #')['Tag'].apply(list).values
 
-    # 将句子和标签存入DataFrame
-    df = pd.DataFrame({'sentence': [' '.join(s) for s in sentences], 'word_labels': [','.join(l) for l in labels]})
+    # 将句子和标签存入DataFrame fixme: separator = '|||'
+    separator = '|||'
+    df = pd.DataFrame({
+        'sentence': [separator.join(s) for s in sentences],
+        'word_labels': [separator.join(l) for l in labels]
+    })
 
     print(df['sentence'])
 
@@ -223,14 +243,15 @@ if __name__ == '__main__':
 
     MAX_LEN = 128
     BATCH_SIZE = 64
-    EPOCHS = 3
+    # fixme EPOCHS = 3
+    EPOCHS = 1
 
     # 创建数据集和数据加载器
     training_set = new_dataset(train_df.reset_index(drop=True), tokenizer, MAX_LEN)
     testing_set = new_dataset(test_df.reset_index(drop=True), tokenizer, MAX_LEN)
 
-    train_params = {'batch_size': BATCH_SIZE, 'shuffle': True, 'num_workers': 0}
-    test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0}
+    train_params = {'batch_size': BATCH_SIZE, 'shuffle': True, 'num_workers': 0, 'collate_fn': collate_fn}
+    test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0, 'collate_fn': collate_fn}
 
     training_loader = DataLoader(training_set, **train_params)
     testing_loader = DataLoader(testing_set, **test_params)
@@ -247,9 +268,26 @@ if __name__ == '__main__':
         print(f"\n========= 训练Epoch {epoch + 1} =========")
         train_epoch(model, training_loader, optimizer, device)
 
+    # 保存模型的状态字典
+    torch.save(model.state_dict(), 'model_weights.pth')
+    print("模型权重已保存")
+
     # 验证模型
     print("\n========= 验证模型 =========")
-    labels_list, preds_list = new_valid(model, testing_loader, device)
+    labels_list, preds_list = new_valid(model, testing_loader)
+
+    # 生成分类报告
+    # 将 labels_list 和 preds_list 展平成一个列表
+    flattened_true_labels = [label for sublist in labels_list for label in sublist]
+    flattened_predictions = [pred for sublist in preds_list for pred in sublist]
+
+    # 生成类别名称列表
+    label_names = [ids_to_labels[i] for i in range(len(ids_to_labels))]
+
+    # 打印分类报告
+    report = classification_report(flattened_true_labels, flattened_predictions, target_names=label_names)
+    print("\n========= 分类报告 =========")
+    print(report)
 
     # 统计BIO规则违例
     print("\n========= 统计BIO规则违例 =========")
@@ -272,6 +310,3 @@ if __name__ == '__main__':
     print(f"BIO规则违例数: {violations}")
     print(f"预测标签总数: {total_preds}")
     print(f"BIO规则违例比例: {violation_ratio:.4f}")
-
-    # 保存模型的状态字典
-    torch.save(model.state_dict(), 'model_weights.pth')
