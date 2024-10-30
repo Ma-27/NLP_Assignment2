@@ -149,8 +149,10 @@ def crf_valid(model, crf_model, testing_loader):
 
             # 使用CRF模型获取预测和损失
             # outpus[1]  use crf_model to get predictions
-            # 在CRF解码时，直接使用有效的attention_mask作为new_mask
+            # 在CRF解码时，直接使用有效的attention_mask
             predictions = crf_model.decode(emissions, mask=mask)
+            # fixme
+            print(f"After decoding, predictions shape: {[len(p) for p in predictions]}")  # 每个序列的长度
 
             # outpus[0] should also come from crf_model
             loss = -crf_model(emissions, labels, mask=mask, reduction='mean')
@@ -166,13 +168,24 @@ def crf_valid(model, crf_model, testing_loader):
             # 将预测结果转换为张量并对齐
             predictions = [torch.tensor(p, device=device) for p in predictions]
             predictions = torch.nn.utils.rnn.pad_sequence(predictions, batch_first=True, padding_value=-100)
+            # fixme
+            print(f"After padding, predictions shape: {predictions.shape}")
+
+            # 调整 labels 和 mask 的尺寸，使其与 predictions 匹配
+            labels = labels[:, :predictions.size(1)]
+            mask = mask[:, :predictions.size(1)]
 
             # 计算准确率
-            flattened_targets = labels.view(-1)  # shape (batch_size * seq_len,)
+            flattened_targets = labels.reshape(-1)  # shape (batch_size * seq_len,)
             flattened_predictions = predictions.view(-1)  # shape (batch_size * seq_len,)
 
             # 只计算活跃标签的准确率
-            active_accuracy = mask.view(-1) != 0  # shape (batch_size, seq_len)
+            active_accuracy = mask.reshape(-1) != 0  # shape (batch_size, seq_len)
+
+            # 检查且打印维度 fixme
+            print(f"flattened_targets shape: {flattened_targets.shape}")  # 打印目标的维度
+            print(f"flattened_predictions shape: {flattened_predictions.shape}")  # 打印预测的维度
+            print(f"active_accuracy shape: {active_accuracy.shape}")  # 打印准确率的维度
 
             labels = torch.masked_select(flattened_targets, active_accuracy)
             predictions = torch.masked_select(flattened_predictions, active_accuracy)
@@ -298,7 +311,7 @@ if __name__ == "__main__":
     for i, label_from in enumerate(labels_list):
         for j, label_to in enumerate(labels_list):
             if not is_valid_transition(label_from, label_to):
-                transition_matrix[i][j] = 0  # 非法转移赋予大负值
+                transition_matrix[i][j] = 1  # 非法转移赋予小正值
             else:
                 transition_matrix[i][j] = 96.0  # 合法转移得分为略大的正值
 
