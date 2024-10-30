@@ -151,6 +151,8 @@ def crf_valid(model, crf_model, testing_loader):
             # outpus[1]  use crf_model to get predictions
             # 在CRF解码时，直接使用有效的attention_mask
             predictions = crf_model.decode(emissions, mask=mask)
+            # fixme
+            print(f"After decoding, predictions shape: {[len(p) for p in predictions]}")  # 每个序列的长度
 
             # outpus[0] should also come from crf_model
             loss = -crf_model(emissions, labels, mask=mask, reduction='mean')
@@ -166,6 +168,8 @@ def crf_valid(model, crf_model, testing_loader):
             # 将预测结果转换为张量并对齐
             predictions = [torch.tensor(p, device=device) for p in predictions]
             predictions = torch.nn.utils.rnn.pad_sequence(predictions, batch_first=True, padding_value=-100)
+            # fixme
+            print(f"After padding, predictions shape: {predictions.shape}")
 
             # 调整 labels 和 mask 的尺寸，使其与 predictions 匹配
             labels = labels[:, :predictions.size(1)]
@@ -177,6 +181,11 @@ def crf_valid(model, crf_model, testing_loader):
 
             # 只计算活跃标签的准确率
             active_accuracy = mask.reshape(-1) != 0  # shape (batch_size, seq_len)
+
+            # 检查且打印维度 fixme
+            print(f"flattened_targets shape: {flattened_targets.shape}")  # 打印目标的维度
+            print(f"flattened_predictions shape: {flattened_predictions.shape}")  # 打印预测的维度
+            print(f"active_accuracy shape: {active_accuracy.shape}")  # 打印准确率的维度
 
             labels = torch.masked_select(flattened_targets, active_accuracy)
             predictions = torch.masked_select(flattened_predictions, active_accuracy)
@@ -234,9 +243,9 @@ if __name__ == "__main__":
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
     # 读取数据，使用实验课的数据集
-    # data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
-    # 真正在Google Colab中运行使用以下路径 todo 修改路径
-    data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    # 真正在Google Colab中运行使用以下路径
+    # data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
 
     # 使用前向填充填补空的'Sentence #'列
     data['Sentence #'] = data['Sentence #'].ffill()
@@ -283,10 +292,8 @@ if __name__ == "__main__":
     model = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=num_labels)
     model.to(device)
 
-    # 加载已训练的Bert模型权重 todo 如在Google Colab上运行，需要修改路径
-    # saved_state_dict = torch.load('model_weights.pth', map_location=device)
-    saved_state_dict = torch.load('/content/model_weights.pth', map_location=device)
-
+    # 加载已训练的Bert模型权重
+    saved_state_dict = torch.load('model_weights.pth', map_location=device)
     model.load_state_dict(saved_state_dict)
     print("已成功加载训练好的Bert模型权重")
 
