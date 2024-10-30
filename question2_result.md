@@ -1,4 +1,4 @@
-# Question 2 - NER模型训练
+# Question 2 - BERT模型
 
 #### 训练+测试结果
 

@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question3.py" beforeDir="false" afterPath="$PROJECT_DIR$/question3.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/question3_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question2.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question2_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question2_result.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -265,7 +266,23 @@
       <option name="project" value="LOCAL" />
       <updated>1730285750223</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="complete question3 but with many bugs">
+      <option name="closed" value="true" />
+      <created>1730290931967</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1730290931967</updated>
+    </task>
+    <task id="LOCAL-00009" summary="extract stimulate matrix from question3 and correct some small error in question 1 and 2.">
+      <option name="closed" value="true" />
+      <created>1730294230675</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1730294230675</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -292,9 +309,12 @@
     <MESSAGE value="complete question2.py but with some bugs" />
     <MESSAGE value="add question2_model_testing.py" />
     <MESSAGE value="complete question2" />
-    <MESSAGE value="complete question3 but with many bugs&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
+    <MESSAGE value="modify question3 running in google Colab&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="complete question3 but with many bugs" />
-    <option name="LAST_COMMIT_MESSAGE" value="complete question3 but with many bugs" />
+    <MESSAGE value="complete question3 and fix the CRF initializer bug" />
+    <MESSAGE value="complete question3 and fix the CRF initializer bug" />
+    <MESSAGE value="extract stimulate matrix from question3 and correct some small error in question 1 and 2." />
+    <option name="LAST_COMMIT_MESSAGE" value="extract stimulate matrix from question3 and correct some small error in question 1 and 2." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
@@ -317,7 +337,7 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Assignment2$question1.coverage" NAME="question1 覆盖结果" MODIFIED="1730169383062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Assignment2$question3.coverage" NAME="question3 覆盖结果" MODIFIED="1730290633564" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Assignment2$question3.coverage" NAME="question3 覆盖结果" MODIFIED="1730291406415" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Assignment2$question2_model_testing.coverage" NAME="question2_model_testing 覆盖结果" MODIFIED="1730173942536" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Assignment2$question2.coverage" NAME="question2 覆盖结果" MODIFIED="1730118248392" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>

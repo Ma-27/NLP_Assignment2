@@ -212,6 +212,8 @@ def collate_fn(batch):
 
 # 主函数
 if __name__ == '__main__':
+    print("========= Question2 =========")
+
     # 初始化设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

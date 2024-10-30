@@ -150,10 +150,11 @@ def crf_valid(model, crf_model, testing_loader):
             # 使用CRF模型获取预测和损失
             # outpus[1]  use crf_model to get predictions
             # 在CRF解码时，直接使用有效的attention_mask
-            predictions = crf_model.decode(emissions, mask=mask)
+            predictions = crf_model.viterbi_decode(emissions, mask=mask)
 
             # outpus[0] should also come from crf_model
-            loss = -crf_model(emissions, labels, mask=mask, reduction='mean')
+            loss = -crf_model(emissions, labels, mask=mask)
+            loss = loss.mean()  # 或者可以根据需要选择 loss.sum()
 
             eval_loss += loss.item()
             nb_eval_steps += 1
@@ -222,6 +223,22 @@ def collate_fn(batch):
     batch = [item for item in batch if item is not None]
     # 使用默认的 collate 函数将剩余的样本组合成一个批量
     return default_collate(batch)
+
+
+# 设置CRF层的转移矩阵
+def customize_transition_matrix():
+    global num_labels
+    # 设置CRF层的转移矩阵
+    num_labels = len(labels_list)
+    transition_matrix = torch.zeros(num_labels, num_labels)
+    for i, label_from in enumerate(labels_list):
+        for j, label_to in enumerate(labels_list):
+            if not is_valid_transition(label_from, label_to):
+                transition_matrix[i][j] = 1  # 非法转移赋予小正值
+            else:
+                transition_matrix[i][j] = 96.0  # 合法转移得分为略大的正值
+    crf_model.transitions = nn.Parameter(transition_matrix.to(device))
+    print("已设置CRF模型的转移矩阵以消除BIO违例")
 
 
 # 主函数
@@ -298,18 +315,7 @@ if __name__ == "__main__":
     labels_list = [ids_to_labels[i] for i in range(len(ids_to_labels))]
 
     # 设置CRF层的转移矩阵
-    num_labels = len(labels_list)
-    transition_matrix = torch.zeros(num_labels, num_labels)
-
-    for i, label_from in enumerate(labels_list):
-        for j, label_to in enumerate(labels_list):
-            if not is_valid_transition(label_from, label_to):
-                transition_matrix[i][j] = 1  # 非法转移赋予小正值
-            else:
-                transition_matrix[i][j] = 96.0  # 合法转移得分为略大的正值
-
-    crf_model.transitions = nn.Parameter(transition_matrix.to(device))
-    print("已设置CRF模型的转移矩阵以消除BIO违例")
+    customize_transition_matrix()
 
     # 验证模型
     print("\n========= 验证模型 =========")
