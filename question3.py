@@ -224,11 +224,9 @@ def BIO_violations(predictions):
 
         # 遍历当前序列的每个标签
         for label in pred_sequence:
-            if label.startswith('I-'):
-                # 检查当前标签是否违反BIO规则,todo 只检查了I-标签是否接在正确的B-或I-标签之后，未检查其他的
-                if not (previous_label.endswith(label[2:]) and (
-                        previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                    violations += 1  # 若违反规则，违例计数增加
+            # 检查从 previous_label 到当前 label 的转移是否符合BIO规则
+            if not is_valid_transition(previous_label, label):
+                violations += 1  # 若违反规则，违例计数增加
 
             # 更新上一个标签为当前标签
             previous_label = label
@@ -266,7 +264,7 @@ def customize_transition_matrix():
                 # 对于合法转移，设置为一个较大的正值
                 transition_matrix[i][j] = 96.0  # 合法转移的高分数
 
-    # 将自定义的转移矩阵赋值给 CRF 模型的 `transitions` 参数
+    # 将自定义的转移矩阵赋值给 CRF 模型的 transitions 参数
     crf_model.transitions = nn.Parameter(transition_matrix.to(device))
 
     # 打印确认信息
