@@ -1,7 +1,8 @@
 import pandas as pd
 import torch
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import classification_report
+import torch.nn as nn
+from TorchCRF import CRF
+from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
@@ -85,6 +86,10 @@ class new_dataset(Dataset):
                         labels.append(labels_to_ids[word_label])
             previous_word_idx = word_idx
 
+        # 处理 -100 error
+        labels = torch.tensor(labels, dtype=torch.long)
+        labels[labels == -100] = 0  # 将 -100 替换为有效标签 0
+
         # 将所有内容转换为PyTorch张量
         item = {key: val.squeeze() for key, val in encoding.items()}
         item['labels'] = torch.as_tensor(labels, dtype=torch.long)
@@ -93,6 +98,30 @@ class new_dataset(Dataset):
 
     def __len__(self):
         return self.len
+
+
+# 定义带有CRF层的模型
+class BertCRF(nn.Module):
+    def __init__(self, num_labels):
+        super(BertCRF, self).__init__()
+        self.num_labels = num_labels
+        self.bert = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=num_labels)
+        self.crf = CRF(num_labels)
+
+    def forward(self, input_ids, attention_mask, labels=None):
+        # 获取BERT的输出
+        outputs = self.bert.bert(input_ids=input_ids, attention_mask=attention_mask)
+        sequence_output = outputs.last_hidden_state  # [batch_size, seq_len, hidden_size]
+        emissions = self.bert.classifier(sequence_output)  # [batch_size, seq_len, num_labels]
+
+        if labels is not None:
+            # 计算CRF损失
+            loss = -self.crf(emissions, labels, mask=attention_mask.byte(), reduction='mean')
+            return loss
+        else:
+            # 使用CRF进行解码
+            prediction = self.crf.decode(emissions, mask=attention_mask.byte())
+            return prediction
 
 
 # 定义训练函数
@@ -106,57 +135,71 @@ def train_epoch(model, dataloader, optimizer, device):
         attention_mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device)
 
-        outputs = model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            labels=labels
-        )
+        loss = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-        loss = outputs.loss
         total_loss += loss.item()
         loss.backward()
         optimizer.step()
 
     avg_loss = total_loss / len(dataloader)
-    print(f"平均训练损失: {avg_loss}")
+    print(f"平均训练损失: {avg_loss:.4f}")
+
+
+# 定义BIO规则转移矩阵的函数
+def is_valid_transition(label_from, label_to):
+    # 如果当前标签为 'O' (Outside)，则下一个标签必须是 'O' 或 'B-' 开头的标签（新的实体的开始）
+    if label_from == 'O':
+        return label_to == 'O' or label_to.startswith('B-')
+
+    # 如果当前标签以 'B-' 开头（表示实体的开始），则下一个标签有三种可能：
+    # 1. 'O'：结束实体并回到 Outside
+    # 2. 另一个 'B-'：表示开始一个新的实体
+    # 3. 对应的 'I-' 标签：表示继续同一类型的实体
+    elif label_from.startswith('B-'):
+        tag_from = label_from[2:]  # 获取当前标签的实体类型
+        return label_to == 'O' or label_to.startswith('B-') or (label_to.startswith('I-') and label_to[2:] == tag_from)
+
+    # 如果当前标签以 'I-' 开头（表示实体的内部），则下一个标签也有三种可能：
+    # 1. 'O'：结束当前实体并回到 Outside
+    # 2. 另一个 'B-'：表示开始一个新的实体
+    # 3. 对应的 'I-' 标签：继续当前类型的实体
+    elif label_from.startswith('I-'):
+        tag_from = label_from[2:]  # 获取当前标签的实体类型
+        return label_to == 'O' or label_to.startswith('B-') or (label_to.startswith('I-') and label_to[2:] == tag_from)
+
+    # 如果当前标签不属于上述任何一种情况，则认为是非法的
+    else:
+        return False
 
 
 # 定义验证函数
-# Active Accuracy can no longer be based on label != -100, we use attention_mask. No need to fix anything here.
-def new_valid(model, testing_loader):
-    # put model in evaluation mode
+def joint_model_valid(model, dataloader, device):
     model.eval()
-
     eval_loss, eval_accuracy = 0, 0
-    nb_eval_examples, nb_eval_steps = 0, 0
     eval_preds, eval_labels = [], []
 
     with torch.no_grad():
-        for idx, batch in enumerate(testing_loader):
+        for idx, batch in enumerate(dataloader):
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
 
-            ids = batch['input_ids'].to(device, dtype=torch.long)
-            mask = batch['attention_mask'].to(device, dtype=torch.long)
-            labels = batch['labels'].to(device, dtype=torch.long)
+            # 获取模型预测结果
+            predictions = model(input_ids=input_ids, attention_mask=attention_mask)
+            # 将预测结果转换为张量并对齐
+            max_len = input_ids.size(1)
+            predictions_padded = [p + [0] * (max_len - len(p)) for p in predictions]
+            predictions_tensor = torch.tensor(predictions_padded).to(device)
 
-            outpus = model(input_ids=ids, attention_mask=mask, labels=labels)
-            loss = outpus[0]
-            eval_logits = outpus[1]
-            eval_loss += loss.item()
+            # 调整 labels 和 attention_mask 的尺寸
+            labels = labels[:, :predictions_tensor.size(1)]
+            attention_mask = attention_mask[:, :predictions_tensor.size(1)]
 
-            nb_eval_steps += 1
-            nb_eval_examples += labels.size(0)
+            # 计算准确率
+            flattened_targets = labels.view(-1)
+            flattened_predictions = predictions_tensor.view(-1)
 
-            if idx % 100 == 0:
-                loss_step = eval_loss / nb_eval_steps
-                print(f"Validation loss per 100 evaluation steps: {loss_step}")
-
-            # compute evaluation accuracy
-            flattened_targets = labels.view(-1)  # shape (batch_size * seq_len,)
-            active_logits = eval_logits.view(-1, model.num_labels)  # shape (batch_size * seq_len, num_labels)
-            flattened_predictions = torch.argmax(active_logits, axis=1)  # shape (batch_size * seq_len,)
-
-            # only compute accuracy at active labels
-            active_accuracy = mask.view(-1) != 0  # shape (batch_size, seq_len)
+            active_accuracy = attention_mask.view(-1) != 0
 
             labels = torch.masked_select(flattened_targets, active_accuracy)
             predictions = torch.masked_select(flattened_predictions, active_accuracy)
@@ -167,19 +210,18 @@ def new_valid(model, testing_loader):
             tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
             eval_accuracy += tmp_eval_accuracy
 
+    eval_accuracy = eval_accuracy / len(dataloader)
+    print(f"验证准确率: {eval_accuracy:.4f}")
+
+    # 转换ID到标签
     labels = [
-        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in labels]
+        [ids_to_labels[id.item()] for id in labels]
         for labels in eval_labels
     ]
     predictions = [
-        [ids_to_labels[id.item()] if id.item() != -100 else 'O' for id in preds]
+        [ids_to_labels[id.item()] for id in preds]
         for preds in eval_preds
     ]
-
-    eval_loss = eval_loss / nb_eval_steps
-    eval_accuracy = eval_accuracy / nb_eval_steps
-    print(f"Validation Loss: {eval_loss}")
-    print(f"Validation Accuracy: {eval_accuracy}")
 
     return labels, predictions
 
@@ -202,7 +244,7 @@ def BIO_violations(predictions):
     return violations, total_preds
 
 
-# 定义自定义的collate函数,跳过返回None的样本
+# 自定义的collate函数，跳过返回None的样本
 def collate_fn(batch):
     # 过滤掉返回 None 的样本
     batch = [item for item in batch if item is not None]
@@ -211,21 +253,19 @@ def collate_fn(batch):
 
 
 # 主函数
-if __name__ == '__main__':
-    print("========= Question2 =========")
-
+if __name__ == "__main__":
+    print("========= Question4 =========")
     # 初始化设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # 初始化tokenizer
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
-    # 读取数据,使用实验课的数据集
+    # 读取数据，使用实验课的数据集
     # data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
-    # 使用Google Colab
+    # fixme 如果在Google Colab中，可以使用以下路径
     data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
 
-    # data = data.fillna(method='ffill')
     # 使用前向填充填补空的'Sentence #'列
     data['Sentence #'] = data['Sentence #'].ffill()
 
@@ -237,17 +277,12 @@ if __name__ == '__main__':
     sentences = data.groupby('Sentence #')['Word'].apply(list).values
     labels = data.groupby('Sentence #')['Tag'].apply(list).values
 
-    # 将句子和标签存入DataFrame fixme: separator = '|||'
+    # 将句子和标签存入DataFrame
     separator = '|||'
     df = pd.DataFrame({
         'sentence': [separator.join(s) for s in sentences],
         'word_labels': [separator.join(l) for l in labels]
     })
-    # 测试df是否正确
-    print("The sentence in df are:")
-    print(df['sentence'])
-    print("The word_labels in df are:")
-    print(df['word_labels'])
 
     # 划分训练集和测试集
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -265,7 +300,6 @@ if __name__ == '__main__':
     print(f"训练数据集规模: {len(training_set)}")
     print(f"测试数据集规模: {len(testing_set)}")
 
-    # 创建数据加载器
     train_params = {'batch_size': BATCH_SIZE, 'shuffle': True, 'num_workers': 0, 'collate_fn': collate_fn}
     test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0, 'collate_fn': collate_fn}
     print(f"训练集加载器参数: {train_params}")
@@ -276,16 +310,17 @@ if __name__ == '__main__':
 
     # 打印第一个训练批次的键和形状
     first_train_batch = next(iter(training_loader))
-    print(f"First training batch keys: {first_train_batch.keys()}")
-    print(f"First training batch 'input_ids' shape: {first_train_batch['input_ids'].shape}")
-    print(f"First training batch 'labels' shape: {first_train_batch['labels'].shape}")
+    print(f"第一个训练批次的Key: {first_train_batch.keys()}")
+    print(f"第一个训练批次 'input_ids' shape: {first_train_batch['input_ids'].shape}")
+    print(f"第一个训练批次 batch 'labels' shape: {first_train_batch['labels'].shape}")
 
-    # 初始化模型
-    model = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=len(labels_to_ids))
+    # 初始化带有CRF层的模型
+    num_labels = len(labels_to_ids)
+    model = BertCRF(num_labels=num_labels)
     model.to(device)
     # 打印模型初始化信息
-    print(f"Model initialized with {len(labels_to_ids)} labels.")
-    print(f"Model is using device: {device}")
+    print(f"模型初始化，使用 {num_labels} 个标签.")
+    print(f"模型使用  {device} 设备.")
 
     # 定义优化器
     optimizer = AdamW(model.parameters(), lr=3e-5)
@@ -296,25 +331,22 @@ if __name__ == '__main__':
         train_epoch(model, training_loader, optimizer, device)
 
     # 保存模型的状态字典
-    torch.save(model.state_dict(), 'model_weights.pth')
-    print("模型权重已保存")
+    torch.save(model.state_dict(), 'joint_model_weights.pth')
+    print("包含CRF层的模型权重已保存")
 
     # 验证模型
     print("\n========= 验证模型 =========")
-    labels_list, preds_list = new_valid(model, testing_loader)
+    labels_list, preds_list = joint_model_valid(model, testing_loader)
 
     # 生成分类报告
-    # 将 labels_list 和 preds_list 展平成一个列表
     flattened_true_labels = [label for sublist in labels_list for label in sublist]
     flattened_predictions = [pred for sublist in preds_list for pred in sublist]
 
     # 获取数据中的唯一标签
     unique_labels = sorted(set(flattened_true_labels + flattened_predictions))
-
     # 打印数据中唯一标签的数量
     print(f"数据中的唯一标签数量: {len(unique_labels)}")
 
-    # 打印分类报告
     report = classification_report(
         flattened_true_labels,
         flattened_predictions,
@@ -322,7 +354,7 @@ if __name__ == '__main__':
         target_names=unique_labels,
         zero_division=0
     )
-    print("\n========= 分类报告 =========")
+    print("\n========= 分类报告（使用BERT与CRF混合模型） =========")
     print(report)
 
     # 统计BIO规则违例
