@@ -3,6 +3,7 @@
 #### 训练+测试结果
 
 ```
+========= Question2 =========
 /usr/local/lib/python3.10/dist-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
 
@@ -116,6 +117,7 @@ BIO规则违例比例: 0.0031
 #### 加载预训练模型，测试结果
 
 ```
+========= Question2 -使用预训练模型验证=========
 /usr/local/lib/python3.10/dist-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
 数据已加载
