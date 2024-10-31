@@ -46,7 +46,7 @@ class new_dataset(Dataset):
         self.max_len = max_len
 
     def __getitem__(self, index):
-        # 获取句子和对应的词标签
+        # 第一步：获取句子和对应的词标签
         sentence = self.data.sentence[index].split(separator)
         word_labels = self.data.word_labels[index].split(separator)
 
@@ -56,7 +56,8 @@ class new_dataset(Dataset):
                 f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
             return None  # skip this example
 
-        # 使用tokenizer对句子进行编码
+        # 第二步：使用tokenizer对句子进行编码，包括填充和截断到最大长度
+        # BertTokenizerFast提供了方便的“return_offsets_mapping”功能
         encoding = self.tokenizer(
             sentence,
             is_split_into_words=True,
@@ -67,30 +68,37 @@ class new_dataset(Dataset):
             return_tensors='pt'
         )
 
+        # 第三步：为每个分词后的词片段创建标签
+        # 如果标签是B-开头，只有第一个词片段保留B-标签，其他的词片段改为I-标签
+        # old labels = [labels_to_ids[label] for label in word_labels]
         labels = []
         word_ids = encoding.word_ids(batch_index=0)
         previous_word_idx = None
 
         for idx, word_idx in enumerate(word_ids):
+            # 对于特殊字符，如[CLS]和[SEP]，以及填充的词片段，标签设为"O"
             if word_idx is None:
-                labels.append(-100)
+                labels.append(labels_to_ids['O'])
             else:
-                word_label = word_labels[word_idx]
+                word_label = word_labels[word_idx]  # 获取当前词的标签
                 if word_idx != previous_word_idx:
+                    # 当前词片段是新词的开始，保留B-标签
                     labels.append(labels_to_ids[word_label])
                 else:
+                    # 如果当前词片段属于同一个词，需要判断标签是否需要转换
                     if word_label.startswith('B-'):
+                        # 如果是B-标签，后续词片段标签改为I-标签
                         new_label = 'I-' + word_label[2:]
                         labels.append(labels_to_ids.get(new_label, labels_to_ids['O']))
                     else:
                         labels.append(labels_to_ids[word_label])
-            previous_word_idx = word_idx
+            previous_word_idx = word_idx  # 更新前一个词索引
 
         # 处理 -100 error
         labels = torch.tensor(labels, dtype=torch.long)
         labels[labels == -100] = 0  # 将 -100 替换为有效标签 0
 
-        # 将所有内容转换为PyTorch张量
+        # 第四步：将所有内容转换为PyTorch张量
         item = {key: val.squeeze() for key, val in encoding.items()}
         item['labels'] = torch.as_tensor(labels, dtype=torch.long)
 
@@ -100,49 +108,70 @@ class new_dataset(Dataset):
         return self.len
 
 
-# 定义带有CRF层的模型
+# 定义带有CRF层的BERT模型
 class BertCRF(nn.Module):
     def __init__(self, num_labels):
+        # 初始化BertCRF模型，包括BERT编码层和CRF层
         super(BertCRF, self).__init__()
+        # 标签数量
         self.num_labels = num_labels
+        # 加载预训练的BERT模型用于Token分类任务，并设置分类标签数量
         self.bert = BertForTokenClassification.from_pretrained('bert-base-uncased', num_labels=num_labels)
+        # 初始化CRF层，标签数量与模型的分类标签数量一致
         self.crf = CRF(num_labels)
 
     def forward(self, input_ids, attention_mask, labels=None):
         # 获取BERT的输出
         outputs = self.bert.bert(input_ids=input_ids, attention_mask=attention_mask)
-        sequence_output = outputs.last_hidden_state  # [batch_size, seq_len, hidden_size]
-        emissions = self.bert.classifier(sequence_output)  # [batch_size, seq_len, num_labels]
+        # 提取最后一层的隐层输出 [batch_size, seq_len, hidden_size]
+        sequence_output = outputs.last_hidden_state
+        # 将隐层输出经过分类层转换为标记的logits分数 [batch_size, seq_len, num_labels]
+        emissions = self.bert.classifier(sequence_output)
 
+        # 如果提供labels参数，则模型会计算损失；否则进入预测模式。
         if labels is not None:
-            # 计算CRF损失
-            loss = -self.crf(emissions, labels, mask=attention_mask.byte())
-            return loss
+            # 训练中，计算CRF损失
+            # 使用CRF层计算损失，将损失取负（CRF层返回的是log-likelihood）,函数返回的是负对数
+            # 使用attention_mask来忽略填充标记位置
+            loss = -self.crf(emissions, labels, mask=attention_mask.bool())
+            return loss  # 返回损失值
         else:
-            # 使用CRF进行解码
-            prediction = self.crf_model.viterbi_decode(emissions, mask=attention_mask.byte())
-            return prediction
+            # 预测时，使用CRF进行解码
+            # CRF层的viterbi_decode方法进行解码，返回最可能的标签路径
+            # 使用attention_mask忽略填充标记位置
+            prediction = self.crf.viterbi_decode(emissions, mask=attention_mask.byte())
+            return prediction  # 返回预测的标签序列
 
 
-# 定义训练函数
+# 定义训练函数，执行一个训练周期的操作。
 def train_epoch(model, dataloader, optimizer, device):
+    # 设置模型为训练模式
     model.train()
     total_loss = 0
 
+    # 逐批次遍历数据加载器
     for batch in tqdm(dataloader, desc="训练中"):
-        optimizer.zero_grad()
+        optimizer.zero_grad()  # 清零优化器的梯度
+
+        # 将输入数据、注意力掩码和标签移至目标设备 (如 CUDA)
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device)
 
+        # 执行前向传播，提取输出的损失值
         loss = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         # 计算平均损失，或者可以根据需要选择 loss.sum()
         loss = loss.mean()
-
+        # 累加损失值
         total_loss += loss.item()
+
+        # 反向传播，计算梯度
         loss.backward()
+
+        # 优化器更新模型权重
         optimizer.step()
 
+    # 计算平均损失
     avg_loss = total_loss / len(dataloader)
     print(f"平均训练损失: {avg_loss:.4f}")
 
@@ -176,42 +205,51 @@ def is_valid_transition(label_from, label_to):
 
 # 定义验证函数
 def joint_model_valid(model, dataloader, device):
+    # 将模型设置为评估模式
     model.eval()
+
     eval_loss, eval_accuracy = 0, 0
     eval_preds, eval_labels = [], []
 
     with torch.no_grad():
         for idx, batch in enumerate(dataloader):
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
+            ids = batch['ids'].to(device)
+            mask = batch['mask'].to(device)
             labels = batch['labels'].to(device)
 
             # 获取模型预测结果
-            predictions = model(input_ids=input_ids, attention_mask=attention_mask)
+            predictions = model(input_ids=ids, attention_mask=mask)
+
             # 将预测结果转换为张量并对齐
-            max_len = input_ids.size(1)
+            max_len = ids.size(1)
             predictions_padded = [p + [0] * (max_len - len(p)) for p in predictions]
             predictions_tensor = torch.tensor(predictions_padded).to(device)
 
-            # 调整 labels 和 attention_mask 的尺寸
+            # 调整 labels 和 mask 的尺寸
             labels = labels[:, :predictions_tensor.size(1)]
-            attention_mask = attention_mask[:, :predictions_tensor.size(1)]
+            mask = mask[:, :predictions_tensor.size(1)]
 
             # 计算准确率
             flattened_targets = labels.view(-1)
             flattened_predictions = predictions_tensor.view(-1)
 
-            active_accuracy = attention_mask.view(-1) != 0
+            # 只计算活跃标签的准确率
+            active_accuracy = mask.view(-1) != 0
 
+            # 只选择有效的标签进行计算
             labels = torch.masked_select(flattened_targets, active_accuracy)
             predictions = torch.masked_select(flattened_predictions, active_accuracy)
 
+            # 将当前批次的标签和预测结果分别添加到列表中
             eval_labels.append(labels)
             eval_preds.append(predictions)
 
-            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
+            # 计算当前批次的准确率
+            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(),
+                                               predictions.cpu().numpy())  # 使用 scikit-learn 计算当前批次的准确率
             eval_accuracy += tmp_eval_accuracy
 
+    # 计算平均准确率。注意，模型 model 没有单独的 CRF 层，所以没有损失值。
     eval_accuracy = eval_accuracy / len(dataloader)
     print(f"验证准确率: {eval_accuracy:.4f}")
 
@@ -233,14 +271,19 @@ def BIO_violations(predictions):
     violations = 0
     total_preds = 0
 
+    # 遍历每个预测序列
     for pred_sequence in predictions:
-        previous_label = 'O'
+        previous_label = 'O'  # 初始上一个标签设为 'O'
+
+        # 遍历当前序列的每个标签
         for label in pred_sequence:
-            if label.startswith('I-'):
-                if not (previous_label.endswith(label[2:]) and (
-                        previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                    violations += 1
+            # 检查从 previous_label 到当前 label 的转移是否符合BIO规则
+            if not is_valid_transition(previous_label, label):
+                violations += 1  # 若违反规则，违例计数增加
+
+            # 更新上一个标签为当前标签
             previous_label = label
+            # 总预测标签数量增加
             total_preds += 1
 
     return violations, total_preds
@@ -295,10 +338,10 @@ if __name__ == "__main__":
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
     MAX_LEN = 128
-    # fixme 批次大小，在PC上调试设置为36，Google Colab上设置为64
-    BATCH_SIZE = 64
+    # fixme 批次大小，在PC上调试设置为36，Google Colab上设置为84
+    BATCH_SIZE = 84
     # fixme 训练轮次，调试时可以设置为1
-    EPOCHS = 1
+    EPOCHS = 5
 
     # 创建数据集和数据加载器
     training_set = new_dataset(train_df.reset_index(drop=True), tokenizer, MAX_LEN)
