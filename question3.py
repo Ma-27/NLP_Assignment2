@@ -45,7 +45,7 @@ class new_dataset(Dataset):
         self.max_len = max_len
 
     def __getitem__(self, index):
-        # 获取句子和对应的词标签
+        # 第一步：获取句子和对应的词标签
         sentence = self.data.sentence[index].split(separator)
         word_labels = self.data.word_labels[index].split(separator)
 
@@ -55,7 +55,8 @@ class new_dataset(Dataset):
                 f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
             return None  # skip this example
 
-        # 使用tokenizer对句子进行编码
+        # 第二步：使用tokenizer对句子进行编码，包括填充和截断到最大长度
+        # BertTokenizerFast提供了方便的“return_offsets_mapping”功能
         encoding = self.tokenizer(
             sentence,
             is_split_into_words=True,
@@ -66,30 +67,37 @@ class new_dataset(Dataset):
             return_tensors='pt'
         )
 
+        # 第三步：为每个分词后的词片段创建标签
+        # 如果标签是B-开头，只有第一个词片段保留B-标签，其他的词片段改为I-标签
+        # old labels = [labels_to_ids[label] for label in word_labels]
         labels = []
         word_ids = encoding.word_ids(batch_index=0)
         previous_word_idx = None
 
         for idx, word_idx in enumerate(word_ids):
+            # 对于特殊字符，如[CLS]和[SEP]，以及填充的词片段，标签设为"O"
             if word_idx is None:
-                labels.append(-100)
+                labels.append(labels_to_ids['O'])
             else:
-                word_label = word_labels[word_idx]
+                word_label = word_labels[word_idx]  # 获取当前词的标签
                 if word_idx != previous_word_idx:
+                    # 当前词片段是新词的开始，保留B-标签
                     labels.append(labels_to_ids[word_label])
                 else:
+                    # 如果当前词片段属于同一个词，需要判断标签是否需要转换
                     if word_label.startswith('B-'):
+                        # 如果是B-标签，后续词片段标签改为I-标签
                         new_label = 'I-' + word_label[2:]
                         labels.append(labels_to_ids.get(new_label, labels_to_ids['O']))
                     else:
                         labels.append(labels_to_ids[word_label])
-            previous_word_idx = word_idx
+            previous_word_idx = word_idx  # 更新前一个词索引
 
         # 处理 -100 error
         labels = torch.tensor(labels, dtype=torch.long)
         labels[labels == -100] = 0  # 将 -100 替换为有效标签 0
 
-        # 将所有内容转换为PyTorch张量
+        # 第四步：将所有内容转换为PyTorch张量
         item = {key: val.squeeze() for key, val in encoding.items()}
         item['labels'] = torch.as_tensor(labels, dtype=torch.long)
 
@@ -167,6 +175,7 @@ def crf_valid(model, crf_model, testing_loader):
             # 将预测结果转换为张量并对齐
             predictions = [torch.tensor(p, device=device) for p in predictions]
             predictions = torch.nn.utils.rnn.pad_sequence(predictions, batch_first=True, padding_value=-100)
+            # print(f"After padding, predictions shape: {predictions.shape}")
 
             # 调整 labels 和 mask 的尺寸，使其与 predictions 匹配
             labels = labels[:, :predictions.size(1)]
@@ -179,15 +188,20 @@ def crf_valid(model, crf_model, testing_loader):
             # 只计算活跃标签的准确率
             active_accuracy = mask.reshape(-1) != 0  # shape (batch_size, seq_len)
 
+            # 只选择有效的标签进行计算
             labels = torch.masked_select(flattened_targets, active_accuracy)
             predictions = torch.masked_select(flattened_predictions, active_accuracy)
 
+            # 将当前批次的标签和预测结果分别添加到列表中
             eval_labels.append(labels)
             eval_preds.append(predictions)
 
-            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
+            # 计算当前批次的准确率
+            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(),
+                                               predictions.cpu().numpy())  # 使用 scikit-learn 计算当前批次的准确率
             eval_accuracy += tmp_eval_accuracy
 
+    # 将所有真实标签和预测标签从 ID 转换为对应的字符串标签
     labels = [[ids_to_labels[id.item()] for id in labels] for labels in eval_labels]
     predictions = [[ids_to_labels[id.item()] for id in preds] for preds in eval_preds]
 
@@ -204,14 +218,21 @@ def BIO_violations(predictions):
     violations = 0
     total_preds = 0
 
+    # 遍历每个预测序列
     for pred_sequence in predictions:
-        previous_label = 'O'
+        previous_label = 'O'  # 初始上一个标签设为 'O'
+
+        # 遍历当前序列的每个标签
         for label in pred_sequence:
             if label.startswith('I-'):
+                # 检查当前标签是否违反BIO规则,todo 只检查了I-标签是否接在正确的B-或I-标签之后，未检查其他的
                 if not (previous_label.endswith(label[2:]) and (
                         previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                    violations += 1
+                    violations += 1  # 若违反规则，违例计数增加
+
+            # 更新上一个标签为当前标签
             previous_label = label
+            # 总预测标签数量增加
             total_preds += 1
 
     return violations, total_preds
@@ -228,16 +249,27 @@ def collate_fn(batch):
 # 设置CRF层的转移矩阵
 def customize_transition_matrix():
     global num_labels
-    # 设置CRF层的转移矩阵
+    # 获取标签数量
     num_labels = len(labels_list)
+
+    # 初始化一个大小为 (num_labels, num_labels) 的零矩阵
     transition_matrix = torch.zeros(num_labels, num_labels)
+
+    # 遍历所有标签的组合，检查合法性
     for i, label_from in enumerate(labels_list):
         for j, label_to in enumerate(labels_list):
+            # 根据BIO规则检查是否为合法转移
             if not is_valid_transition(label_from, label_to):
-                transition_matrix[i][j] = 1  # 非法转移赋予小正值
+                # 对于非法转移，设置为一个小的正值
+                transition_matrix[i][j] = 1  # 非法转移的低分数
             else:
-                transition_matrix[i][j] = 96.0  # 合法转移得分为略大的正值
+                # 对于合法转移，设置为一个较大的正值
+                transition_matrix[i][j] = 96.0  # 合法转移的高分数
+
+    # 将自定义的转移矩阵赋值给 CRF 模型的 `transitions` 参数
     crf_model.transitions = nn.Parameter(transition_matrix.to(device))
+
+    # 打印确认信息
     print("已设置CRF模型的转移矩阵以消除BIO违例")
 
 

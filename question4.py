@@ -116,11 +116,11 @@ class BertCRF(nn.Module):
 
         if labels is not None:
             # 计算CRF损失
-            loss = -self.crf(emissions, labels, mask=attention_mask.byte(), reduction='mean')
+            loss = -self.crf(emissions, labels, mask=attention_mask.byte())
             return loss
         else:
             # 使用CRF进行解码
-            prediction = self.crf.decode(emissions, mask=attention_mask.byte())
+            prediction = self.crf_model.viterbi_decode(emissions, mask=attention_mask.byte())
             return prediction
 
 
@@ -136,6 +136,8 @@ def train_epoch(model, dataloader, optimizer, device):
         labels = batch['labels'].to(device)
 
         loss = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        # 计算平均损失，或者可以根据需要选择 loss.sum()
+        loss = loss.mean()
 
         total_loss += loss.item()
         loss.backward()
@@ -277,21 +279,26 @@ if __name__ == "__main__":
     sentences = data.groupby('Sentence #')['Word'].apply(list).values
     labels = data.groupby('Sentence #')['Tag'].apply(list).values
 
-    # 将句子和标签存入DataFrame
+    # 将句子和标签存入DataFrame todo: separator = '|||'
     separator = '|||'
     df = pd.DataFrame({
         'sentence': [separator.join(s) for s in sentences],
         'word_labels': [separator.join(l) for l in labels]
     })
+    # 测试df是否正确
+    print("The sentence in df are:")
+    print(df['sentence'])
+    print("The word_labels in df are:")
+    print(df['word_labels'])
 
     # 划分训练集和测试集
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
     MAX_LEN = 128
-    # fixme 批次大小，在PC上调试设置为36，Google Colab上设置为96
-    BATCH_SIZE = 96
+    # fixme 批次大小，在PC上调试设置为36，Google Colab上设置为64
+    BATCH_SIZE = 64
     # fixme 训练轮次，调试时可以设置为1
-    EPOCHS = 5
+    EPOCHS = 1
 
     # 创建数据集和数据加载器
     training_set = new_dataset(train_df.reset_index(drop=True), tokenizer, MAX_LEN)
@@ -336,7 +343,7 @@ if __name__ == "__main__":
 
     # 验证模型
     print("\n========= 验证模型 =========")
-    labels_list, preds_list = joint_model_valid(model, testing_loader)
+    labels_list, preds_list = joint_model_valid(model, testing_loader, device)
 
     # 生成分类报告
     flattened_true_labels = [label for sublist in labels_list for label in sublist]

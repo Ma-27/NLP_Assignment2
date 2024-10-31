@@ -45,7 +45,7 @@ class new_dataset(Dataset):
         self.max_len = max_len
 
     def __getitem__(self, index):
-        # 获取句子和对应的词标签
+        # 第一步：获取句子和对应的词标签
         sentence = self.data.sentence[index].split(separator)
         word_labels = self.data.word_labels[index].split(separator)
 
@@ -55,7 +55,8 @@ class new_dataset(Dataset):
                 f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
             return None  # skip this example
 
-        # 使用tokenizer对句子进行编码
+        # 第二步：使用tokenizer对句子进行编码，包括填充和截断到最大长度
+        # BertTokenizerFast提供了方便的“return_offsets_mapping”功能
         encoding = self.tokenizer(
             sentence,
             is_split_into_words=True,
@@ -66,26 +67,33 @@ class new_dataset(Dataset):
             return_tensors='pt'
         )
 
+        # 第三步：为每个分词后的词片段创建标签
+        # 如果标签是B-开头，只有第一个词片段保留B-标签，其他的词片段改为I-标签
+        # old labels = [labels_to_ids[label] for label in word_labels]
         labels = []
         word_ids = encoding.word_ids(batch_index=0)
         previous_word_idx = None
 
         for idx, word_idx in enumerate(word_ids):
+            # 对于特殊字符，如[CLS]和[SEP]，以及填充的词片段，标签设为"O"
             if word_idx is None:
-                labels.append(-100)
+                labels.append(labels_to_ids['O'])
             else:
-                word_label = word_labels[word_idx]
+                word_label = word_labels[word_idx]  # 获取当前词的标签
                 if word_idx != previous_word_idx:
+                    # 当前词片段是新词的开始，保留B-标签
                     labels.append(labels_to_ids[word_label])
                 else:
+                    # 如果当前词片段属于同一个词，需要判断标签是否需要转换
                     if word_label.startswith('B-'):
+                        # 如果是B-标签，后续词片段标签改为I-标签
                         new_label = 'I-' + word_label[2:]
                         labels.append(labels_to_ids.get(new_label, labels_to_ids['O']))
                     else:
                         labels.append(labels_to_ids[word_label])
-            previous_word_idx = word_idx
+            previous_word_idx = word_idx  # 更新前一个词索引
 
-        # 将所有内容转换为PyTorch张量
+        # 第四步：将所有内容转换为PyTorch张量
         item = {key: val.squeeze() for key, val in encoding.items()}
         item['labels'] = torch.as_tensor(labels, dtype=torch.long)
 
@@ -95,28 +103,39 @@ class new_dataset(Dataset):
         return self.len
 
 
-# 定义训练函数
+# 定义训练函数，执行一个训练周期的操作。
 def train_epoch(model, dataloader, optimizer, device):
+    # 设置模型为训练模式
     model.train()
     total_loss = 0
 
+    # 逐批次遍历数据加载器
     for batch in tqdm(dataloader, desc="训练中"):
-        optimizer.zero_grad()
+        optimizer.zero_grad()  # 清零优化器的梯度
+
+        # 将输入数据、注意力掩码和标签移至目标设备 (如 CUDA)
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device)
 
+        # 执行模型的前向传播操作
         outputs = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             labels=labels
         )
 
+        # 提取输出的损失值
         loss = outputs.loss
-        total_loss += loss.item()
+        total_loss += loss.item()  # 累加损失值
+
+        # 反向传播，计算梯度
         loss.backward()
+
+        # 优化器更新模型权重
         optimizer.step()
 
+    # 计算平均损失
     avg_loss = total_loss / len(dataloader)
     print(f"平均训练损失: {avg_loss}")
 
@@ -189,14 +208,21 @@ def BIO_violations(predictions):
     violations = 0
     total_preds = 0
 
+    # 遍历每个预测序列
     for pred_sequence in predictions:
-        previous_label = 'O'
+        previous_label = 'O'  # 初始上一个标签设为 'O'
+
+        # 遍历当前序列的每个标签
         for label in pred_sequence:
             if label.startswith('I-'):
+                # 检查当前标签是否违反BIO规则,todo 只检查了I-标签是否接在正确的B-或I-标签之后，未检查其他的
                 if not (previous_label.endswith(label[2:]) and (
                         previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                    violations += 1
+                    violations += 1  # 若违反规则，违例计数增加
+
+            # 更新上一个标签为当前标签
             previous_label = label
+            # 总预测标签数量增加
             total_preds += 1
 
     return violations, total_preds
