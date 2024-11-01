@@ -213,8 +213,8 @@ def joint_model_valid(model, dataloader, device):
 
     with torch.no_grad():
         for idx, batch in enumerate(dataloader):
-            ids = batch['ids'].to(device)
-            mask = batch['mask'].to(device)
+            ids = batch['input_ids'].to(device)
+            mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
 
             # 获取模型预测结果

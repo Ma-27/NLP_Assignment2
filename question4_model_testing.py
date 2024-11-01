@@ -135,7 +135,7 @@ class BertCRF(nn.Module):
             # 预测时，使用CRF进行解码
             # CRF层的decode方法进行解码，返回最可能的标签路径
             # 使用attention_mask忽略填充标记位置
-            prediction = self.crf.decode(emissions, mask=attention_mask.bool())
+            prediction = self.crf.viterbi_decode(emissions, mask=attention_mask.bool())
             return prediction  # 返回预测的标签序列
 
 

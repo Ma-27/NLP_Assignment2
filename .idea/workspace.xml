@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/question4_model_testing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question2_model_testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2_model_testing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question2_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question2_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question1.py" beforeDir="false" afterPath="$PROJECT_DIR$/question1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question1_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question1_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question4.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/question4_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question4_result.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -31,12 +30,26 @@
         <option value="mamhsl" />
       </list>
     </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="debug_info" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="SIGN_OFF_COMMIT" value="true" />
   </component>
-  <component name="PerforceDirect.Settings">
-    <option name="CHARSET" value="无" />
-  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Ma-27&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Ma-27/NLP_Assignment2&quot;,
+    &quot;accountId&quot;: &quot;fabe7982-c8d8-4d4a-b50a-6883fe9faa8d&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -65,7 +78,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.question3">
+  <component name="RunManager" selected="Python.question1">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Assignment2" />
       <option name="ENV_FILES" value="" />
@@ -183,10 +196,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question3" />
         <item itemvalue="Python.question2_model_testing" />
-        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question2" />
+        <item itemvalue="Python.question3" />
       </list>
     </recent_temporary>
   </component>
@@ -214,8 +228,9 @@
       <workItem from="1730203497002" duration="3309000" />
       <workItem from="1730207005512" duration="2417000" />
       <workItem from="1730251128471" duration="5352000" />
-      <workItem from="1730285153704" duration="3477000" />
-      <workItem from="1730339121877" duration="17340000" />
+      <workItem from="1730285153704" duration="4035000" />
+      <workItem from="1730377151596" duration="4806000" />
+      <workItem from="1730425724014" duration="8170000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -273,63 +288,23 @@
       <option name="project" value="LOCAL" />
       <updated>1730285750223</updated>
     </task>
-    <task id="LOCAL-00008" summary="complete question3 but with many bugs">
+    <task id="LOCAL-00008" summary="complete question3(with debug info)">
       <option name="closed" value="true" />
-      <created>1730290931967</created>
+      <created>1730288695129</created>
       <option name="number" value="00008" />
       <option name="presentableId" value="LOCAL-00008" />
       <option name="project" value="LOCAL" />
-      <updated>1730290931967</updated>
+      <updated>1730288695130</updated>
     </task>
-    <task id="LOCAL-00009" summary="extract stimulate matrix from question3 and correct some small error in question 1 and 2.">
+    <task id="LOCAL-00009" summary="fix some small bugs and conduct result complement">
       <option name="closed" value="true" />
-      <created>1730294230675</created>
+      <created>1730441389267</created>
       <option name="number" value="00009" />
       <option name="presentableId" value="LOCAL-00009" />
       <option name="project" value="LOCAL" />
-      <updated>1730294230675</updated>
+      <updated>1730441389267</updated>
     </task>
-    <task id="LOCAL-00010" summary="extract stimulate matrix from question3 and correct some small error in question 1 and 2.">
-      <option name="closed" value="true" />
-      <created>1730294392678</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1730294392678</updated>
-    </task>
-    <task id="LOCAL-00011" summary="question.py initial commit">
-      <option name="closed" value="true" />
-      <created>1730343228696</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1730343228696</updated>
-    </task>
-    <task id="LOCAL-00012" summary="add some detailed comments">
-      <option name="closed" value="true" />
-      <created>1730347151683</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1730347151683</updated>
-    </task>
-    <task id="LOCAL-00013" summary="modify the BIO_violations to give more precise evaluation">
-      <option name="closed" value="true" />
-      <created>1730347547799</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1730347547799</updated>
-    </task>
-    <task id="LOCAL-00014" summary="add some comments on question4.py">
-      <option name="closed" value="true" />
-      <created>1730356837339</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1730356837341</updated>
-    </task>
-    <option name="localTasksCounter" value="15" />
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -356,20 +331,12 @@
     <MESSAGE value="complete question2.py but with some bugs" />
     <MESSAGE value="add question2_model_testing.py" />
     <MESSAGE value="complete question2" />
-    <MESSAGE value="modify question3 running in google Colab&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
+    <MESSAGE value="complete question3 but with many bugs&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="complete question3 but with many bugs" />
-    <MESSAGE value="complete question3 and fix the CRF initializer bug" />
-    <MESSAGE value="complete question3 and fix the CRF initializer bug" />
-    <MESSAGE value="extract stimulate matrix from question3 and correct some small error in question 1 and 2.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
-    <MESSAGE value="extract stimulate matrix from question3 and correct some small error in question 1 and 2." />
-    <MESSAGE value="question.py initial commit" />
-    <MESSAGE value="add some detailed comments" />
-    <MESSAGE value="add some detailed comments and fix fix API compatibility bugs&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
-    <MESSAGE value="add some detailed comments and fix fix API compatibility bugs&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
-    <MESSAGE value="modify the bio violation rules" />
-    <MESSAGE value="modify the BIO_violations to give more precise evaluation" />
-    <MESSAGE value="add some comments on question4.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="add some comments on question4.py" />
+    <MESSAGE value="complete question3(with debug info)&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
+    <MESSAGE value="complete question3(with debug info)" />
+    <MESSAGE value="fix some small bugs and conduct result complement" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix some small bugs and conduct result complement" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
@@ -383,16 +350,16 @@
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/question2.py</url>
-          <line>48</line>
+          <url>file://$PROJECT_DIR$/question1.py</url>
+          <line>118</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Assignment2$question1.coverage" NAME="question1 覆盖结果" MODIFIED="1730169383062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Assignment2$question3.coverage" NAME="question3 覆盖结果" MODIFIED="1730360680353" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Assignment2$question1.coverage" NAME="question1 覆盖结果" MODIFIED="1730444988064" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Assignment2$question3.coverage" NAME="question3 覆盖结果" MODIFIED="1730289211382" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Assignment2$question2_model_testing.coverage" NAME="question2_model_testing 覆盖结果" MODIFIED="1730173942536" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Assignment2$question2.coverage" NAME="question2 覆盖结果" MODIFIED="1730118248392" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
