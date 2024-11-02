@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
+    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the Data">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question1.py" beforeDir="false" afterPath="$PROJECT_DIR$/question1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question1_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question1_result.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/question4.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/question4_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question4_result.md" afterDir="false" />
     </list>
@@ -32,7 +30,7 @@
     </option>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="debug_info" />
+        <entry key="$PROJECT_DIR$" value="master" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -61,23 +59,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.question1.executor&quot;: &quot;Run&quot;,
-    &quot;Python.question2.executor&quot;: &quot;Run&quot;,
-    &quot;Python.question2_model_testing.executor&quot;: &quot;Run&quot;,
-    &quot;Python.question3.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.question1.executor": "Run",
+    "Python.question2.executor": "Run",
+    "Python.question2_model_testing.executor": "Run",
+    "Python.question3.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "develop",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Python.question1">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Assignment2" />
@@ -196,10 +194,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question3" />
         <item itemvalue="Python.question2_model_testing" />
         <item itemvalue="Python.question2" />
+        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question3" />
       </list>
     </recent_temporary>
@@ -231,6 +229,7 @@
       <workItem from="1730285153704" duration="4035000" />
       <workItem from="1730377151596" duration="4806000" />
       <workItem from="1730425724014" duration="8170000" />
+      <workItem from="1730518605273" duration="9438000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -353,6 +352,11 @@
           <url>file://$PROJECT_DIR$/question1.py</url>
           <line>118</line>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question4.py</url>
+          <line>3</line>
+          <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
