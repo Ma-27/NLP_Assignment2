@@ -1,10 +1,9 @@
 import pandas as pd
 import torch
-import torch.nn as nn
-from TorchCRF import CRF
-from sklearn.metrics import accuracy_score, classification_report
+from datasets import load_dataset, Dataset  # 注意这里
+from seqeval.metrics import classification_report, f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from transformers import BertTokenizerFast, BertForTokenClassification
 
@@ -36,77 +35,6 @@ labels_to_ids = {
 ids_to_labels = {id: label for label, id in labels_to_ids.items()}
 
 
-# 定义数据集类
-class new_dataset(Dataset):
-    def __init__(self, dataframe, tokenizer, max_len):
-        self.len = len(dataframe)
-        self.data = dataframe
-        self.tokenizer = tokenizer
-        self.max_len = max_len
-
-    def __getitem__(self, index):
-        # 第一步：获取句子和对应的词标签
-        sentence = self.data.sentence[index].split(separator)
-        word_labels = self.data.word_labels[index].split(separator)
-
-        # 检查句子和词标签长度是否匹配
-        if len(sentence) != len(word_labels):
-            print(
-                f"Index {index} has mismatched lengths: len(sentence)={len(sentence)}, len(word_labels)={len(word_labels)}")
-            return None  # skip this example
-
-        # 第二步：使用tokenizer对句子进行编码，包括填充和截断到最大长度
-        # BertTokenizerFast提供了方便的“return_offsets_mapping”功能
-        encoding = self.tokenizer(
-            sentence,
-            is_split_into_words=True,
-            return_offsets_mapping=True,
-            padding='max_length',
-            truncation=True,
-            max_length=self.max_len,
-            return_tensors='pt'
-        )
-
-        # 第三步：为每个分词后的词片段创建标签
-        # 如果标签是B-开头，只有第一个词片段保留B-标签，其他的词片段改为I-标签
-        # old labels = [labels_to_ids[label] for label in word_labels]
-        labels = []
-        word_ids = encoding.word_ids(batch_index=0)
-        previous_word_idx = None
-
-        for idx, word_idx in enumerate(word_ids):
-            # 对于特殊字符，如[CLS]和[SEP]，以及填充的词片段，标签设为"O"
-            if word_idx is None:
-                labels.append(labels_to_ids['O'])
-            else:
-                word_label = word_labels[word_idx]  # 获取当前词的标签
-                if word_idx != previous_word_idx:
-                    # 当前词片段是新词的开始，保留B-标签
-                    labels.append(labels_to_ids[word_label])
-                else:
-                    # 如果当前词片段属于同一个词，需要判断标签是否需要转换
-                    if word_label.startswith('B-'):
-                        # 如果是B-标签，后续词片段标签改为I-标签
-                        new_label = 'I-' + word_label[2:]
-                        labels.append(labels_to_ids.get(new_label, labels_to_ids['O']))
-                    else:
-                        labels.append(labels_to_ids[word_label])
-            previous_word_idx = word_idx  # 更新前一个词索引
-
-        # 处理 -100 error
-        labels = torch.tensor(labels, dtype=torch.long)
-        labels[labels == -100] = 0  # 将 -100 替换为有效标签 0
-
-        # 第四步：将所有内容转换为PyTorch张量
-        item = {key: val.squeeze() for key, val in encoding.items()}
-        item['labels'] = torch.as_tensor(labels, dtype=torch.long)
-
-        return item
-
-    def __len__(self):
-        return self.len
-
-
 # 定义BIO规则转移矩阵的函数
 def is_valid_transition(label_from, label_to):
     # 如果当前标签为 'O' (Outside)，则下一个标签必须是 'O' 或 'B-' 开头的标签（新的实体的开始）
@@ -134,83 +62,94 @@ def is_valid_transition(label_from, label_to):
         return False
 
 
-# 重写验证函数，按照原题目要求
-def crf_valid(model, crf_model, testing_loader):
-    # 将模型设置为评估模式
-    model.eval()
+# 加载数据集并进行预处理（使用datasets库）
+def load_and_preprocess_data(file_path):
+    # 使用 Hugging Face 的 datasets 库加载数据
+    dataset = load_dataset('csv', data_files={'train': file_path}, encoding='latin1', on_bad_lines='skip')
 
-    eval_loss, eval_accuracy = 0, 0
-    nb_eval_examples, nb_eval_steps = 0, 0
-    eval_preds, eval_labels = [], []
+    # 填充缺失值
+    dataset = dataset['train']
+    dataset = dataset.to_pandas()
+    # 使用前向填充填补空的'Sentence #'列
+    dataset['Sentence #'] = dataset['Sentence #'].ffill()
 
-    with torch.no_grad():
-        for idx, batch in enumerate(testing_loader):
-            ids = batch['input_ids'].to(device, dtype=torch.long)
-            mask = batch['attention_mask'].to(device, dtype=torch.bool)  # 注意这里修改使用 bool 类型，防止-100撞上
-            labels = batch['labels'].to(device, dtype=torch.long)
+    # 将非字符串的单词和标签替换为缺失标记'O'
+    dataset['Word'] = dataset['Word'].fillna('O').astype(str)
+    dataset['Tag'] = dataset['Tag'].fillna('O').astype(str)
 
-            # 获取Bert模型的输出
-            outputs = model(input_ids=ids, attention_mask=mask)
+    # 按句子分组
+    sentences = dataset.groupby('Sentence #')['Word'].apply(list).values
+    labels = dataset.groupby('Sentence #')['Tag'].apply(list).values
 
-            # 获取发射分数
-            emissions = outputs.logits  # (batch_size, seq_len, num_labels)
+    # 创建 DataFrame
+    df = pd.DataFrame({'words': sentences, 'labels': labels})
+    # 测试df是否正确
+    print("The sentence in df are:")
+    print(df['words'])
+    print("The word_labels in df are:")
+    print(df['labels'])
 
-            # 使用CRF模型获取预测和损失
-            # outpus[1]  use crf_model to get predictions
-            # 在CRF解码时，直接使用有效的attention_mask
-            predictions = crf_model.viterbi_decode(emissions, mask=mask)
+    # 划分训练集和测试集
+    train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
-            # outpus[0] should also come from crf_model
-            loss = -crf_model(emissions, labels, mask=mask)
-            loss = loss.mean()  # 或者可以根据需要选择 loss.sum()
+    return train_df, test_df
 
-            eval_loss += loss.item()
-            nb_eval_steps += 1
-            nb_eval_examples += labels.size(0)
 
-            if idx % 100 == 0:
-                loss_step = eval_loss / nb_eval_steps
-                print(f"每100步的验证损失: {loss_step}")
+# 定义分词和标签对齐函数
+def tokenize_and_align_labels(examples):
+    tokenized_inputs = tokenizer(
+        examples['words'],
+        is_split_into_words=True,
+        return_offsets_mapping=True,
+        padding='max_length',
+        truncation=True,
+        max_length=128
+    )
 
-            # 将预测结果转换为张量并对齐
-            predictions = [torch.tensor(p, device=device) for p in predictions]
-            predictions = torch.nn.utils.rnn.pad_sequence(predictions, batch_first=True, padding_value=-100)
-            # print(f"After padding, predictions shape: {predictions.shape}")
+    # 初始化标签列表
+    labels = []
+    # 获取批次中每个样本的分词结果
+    for batch_index in range(len(examples['words'])):
+        # 第一步：获取当前句子的词标签
+        word_labels = examples['labels'][batch_index]
+        # 第二步：获取当前句子的 word_ids
+        word_ids = tokenized_inputs.word_ids(batch_index=batch_index)
+        previous_word_idx = None
+        label_ids = []
 
-            # 调整 labels 和 mask 的尺寸，使其与 predictions 匹配
-            labels = labels[:, :predictions.size(1)]
-            mask = mask[:, :predictions.size(1)]
+        # 第三步：为每个分词后的词片段创建标签
+        # 如果标签是 B- 开头，只有第一个词片段保留 B- 标签，其他的词片段改为 I- 标签
+        for idx, word_idx in enumerate(word_ids):
+            # 对于特殊字符，如 [CLS]、[SEP]，以及填充的词片段，标签设为 "O"
+            if word_idx is None:
+                label_ids.append(labels_to_ids['O'])
+            else:
+                word_label = word_labels[word_idx]  # 获取当前词的标签
+                if word_idx != previous_word_idx:
+                    # 当前词片段是新词的开始，保留原始标签
+                    label_ids.append(labels_to_ids[word_label])
+                else:
+                    # 当前词片段属于同一个词，需要判断标签是否需要转换
+                    if word_label.startswith('B-'):
+                        # 如果是 B- 标签，后续词片段标签改为 I- 标签
+                        new_label = 'I-' + word_label[2:]
+                        label_ids.append(labels_to_ids.get(new_label, labels_to_ids['O']))
+                    else:
+                        label_ids.append(labels_to_ids[word_label])
+            previous_word_idx = word_idx  # 更新前一个词索引
 
-            # 计算准确率
-            flattened_targets = labels.reshape(-1)  # shape (batch_size * seq_len,)
-            flattened_predictions = predictions.view(-1)  # shape (batch_size * seq_len,)
+        # 将处理好的标签添加到 labels 列表中
+        labels.append(label_ids)
 
-            # 只计算活跃标签的准确率
-            active_accuracy = mask.reshape(-1) != 0  # shape (batch_size, seq_len)
+    # 处理标签中的 -100 错误（如果有的话）
+    for i in range(len(labels)):
+        label_ids = labels[i]
+        label_ids = [label if label != -100 else labels_to_ids['O'] for label in label_ids]
+        labels[i] = label_ids
 
-            # 只选择有效的标签进行计算
-            labels = torch.masked_select(flattened_targets, active_accuracy)
-            predictions = torch.masked_select(flattened_predictions, active_accuracy)
-
-            # 将当前批次的标签和预测结果分别添加到列表中
-            eval_labels.append(labels)
-            eval_preds.append(predictions)
-
-            # 计算当前批次的准确率
-            tmp_eval_accuracy = accuracy_score(labels.cpu().numpy(),
-                                               predictions.cpu().numpy())  # 使用 scikit-learn 计算当前批次的准确率
-            eval_accuracy += tmp_eval_accuracy
-
-    # 将所有真实标签和预测标签从 ID 转换为对应的字符串标签
-    labels = [[ids_to_labels[id.item()] for id in labels] for labels in eval_labels]
-    predictions = [[ids_to_labels[id.item()] for id in preds] for preds in eval_preds]
-
-    eval_loss = eval_loss / nb_eval_steps
-    eval_accuracy = eval_accuracy / nb_eval_steps
-    print(f"验证损失: {eval_loss}")
-    print(f"验证准确率: {eval_accuracy}")
-
-    return labels, predictions
+    # 第四步：将标签添加到 tokenized_inputs 中
+    tokenized_inputs["labels"] = labels
+    return tokenized_inputs
 
 
 # 定义BIO违例统计函数
@@ -236,39 +175,139 @@ def BIO_violations(predictions):
     return violations, total_preds
 
 
+# 定义自定义的解码函数，强制BIO约束
+def viterbi_decode_with_constraints(emissions, mask):
+    # 获取批次大小、序列长度和标签数
+    batch_size, seq_length, num_tags = emissions.size()
+
+    # 初始化 scores 张量，用于存储从起始位置到各标签的得分
+    # 初始得分设为极小值，只有 'O' 标签的得分设为 0，其他标签初始得分为极低值，确保解码从 'O' 开始
+    scores = emissions.new_full((batch_size, num_tags), -10000.0)
+    scores[:, labels_to_ids['O']] = 0.0  # 只有 'O' 标签初始得分不为极小值
+
+    # pointers 张量用于记录回溯路径，形状为 [batch_size, seq_length, num_tags]
+    pointers = emissions.new_zeros((batch_size, seq_length, num_tags), dtype=torch.long)
+
+    # 创建转移分数矩阵，大小为 [num_tags, num_tags]，用于存储合法和非法转移得分
+    # 初始值为 0 表示合法转移，非法转移的得分将设为极低值
+    transition_scores = emissions.new_full((num_tags, num_tags), 0.0)
+    for i in range(num_tags):
+        for j in range(num_tags):
+            label_from = ids_to_labels[i]
+            label_to = ids_to_labels[j]
+            if not is_valid_transition(label_from, label_to):  # 检查BIO规则是否允许该转移
+                transition_scores[i, j] = -10000.0  # 非法转移的分数设为极低值
+
+    # 逐时间步计算每个标签的最优得分和路径
+    for t in range(seq_length):
+        # 获取当前时间步的掩码，形状为 [batch_size, 1]，用于忽略填充位置
+        mask_t = mask[:, t].unsqueeze(1)
+
+        # 获取当前时间步的发射分数，形状为 [batch_size, num_tags]
+        emit_scores = emissions[:, t]
+
+        # 扩展 scores 和 emit_scores 的维度，以便在计算时匹配 [batch_size, num_tags, num_tags]
+        scores_expanded = scores.unsqueeze(2)  # 形状变为 [batch_size, num_tags, 1]
+        emit_scores_expanded = emit_scores.unsqueeze(1)  # 形状变为 [batch_size, 1, num_tags]
+
+        # 计算总得分：前一时间步的得分 + 转移得分 + 当前时间步的发射得分
+        # transition_scores 添加到 scores_expanded 和 emit_scores_expanded 之和上，形状为 [batch_size, num_tags, num_tags]
+        scores_t = scores_expanded + transition_scores.unsqueeze(0) + emit_scores_expanded
+
+        # 在前一时刻的标签上取得分最高的路径，得到最佳得分 scores_t 和对应的前一标签 indices
+        # scores_t: [batch_size, num_tags], indices: [batch_size, num_tags]
+        scores_t, indices = scores_t.max(1)
+
+        # 更新 scores，考虑 mask，如果 mask 为 1，则用新 scores，否则保持旧 scores
+        scores = scores_t * mask_t + scores * (1 - mask_t)
+
+        # 记录路径，便于后续回溯找到最佳标签序列
+        pointers[:, t] = indices
+
+    # 回溯找到最优路径
+    # seq_ends 表示每个序列的有效长度减1（因为序列从 0 开始计数）
+    seq_ends = mask.long().sum(1) - 1  # 形状为 [batch_size]
+    best_tags_list = []
+
+    # 对每个序列逐个回溯，找到最优路径
+    for idx in range(batch_size):
+        # 从最后一个时间步开始，找到最佳的最后一个标签
+        seq_end = seq_ends[idx]
+        best_last_tag = scores[idx].argmax().item()  # 获取得分最高的标签索引
+        best_tags = [best_last_tag]
+
+        # 逐步回溯找到最优路径，直到序列开头
+        for back_t in range(seq_end, 0, -1):
+            best_last_tag = pointers[idx, back_t, best_last_tag]
+            best_tags.append(best_last_tag.item())
+
+        # 由于回溯过程从后向前，最终路径需要反转
+        best_tags.reverse()
+        best_tags_list.append(best_tags)  # 将路径添加到结果列表中
+
+    return best_tags_list  # 返回包含所有序列最优标签路径的列表
+
+
+# 定义验证函数，使用自定义的解码函数
+def crf_valid(model, testing_loader):
+    # 将模型设置为评估模式
+    model.eval()
+
+    eval_preds, eval_labels = [], []
+
+    with torch.no_grad():
+        for idx, batch in enumerate(testing_loader):
+            ids = batch['input_ids'].to(device)
+            mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+
+            # 获取Bert模型的输出
+            outputs = model(input_ids=ids, attention_mask=mask)
+
+            # 获取发射分数
+            emissions = outputs.logits  # (batch_size, seq_len, num_labels)
+
+            # 使用自定义解码函数获取预测结果
+            predictions = viterbi_decode_with_constraints(emissions, mask)
+
+            # 将预测结果对齐并转换为标签
+            labels = labels.cpu().numpy()
+            mask = mask.cpu().numpy()
+
+            # 对于在一批中的每个样本
+            for i in range(len(predictions)):
+                pred = predictions[i]
+                label = labels[i]
+                mask_i = mask[i]
+
+                # 初始化列表来存储 true labels 和 predictions
+                true_labels = []
+                pred_labels = []
+
+                # 遍历当前句子的每个token
+                for j in range(len(pred)):
+                    if mask_i[j]:
+                        # 只考虑 attention_mask 为 1 的 token，忽略填充的 token
+                        label_id = label[j]
+                        pred_id = pred[j]
+                        if label_id != -100:
+                            true_labels.append(ids_to_labels[label_id])
+                            pred_labels.append(ids_to_labels[pred_id])
+
+                # 将当前句子的 true labels 和 predictions 添加到全部的列表中
+                eval_labels.append(true_labels)
+                eval_preds.append(pred_labels)
+
+    # 返回未展平的标签列表，适用于 seqeval.metrics
+    return eval_labels, eval_preds
+
+
 # 自定义的collate函数，跳过返回None的样本
 def collate_fn(batch):
     # 过滤掉返回 None 的样本
     batch = [item for item in batch if item is not None]
     # 使用默认的 collate 函数将剩余的样本组合成一个批量
     return default_collate(batch)
-
-
-# 设置CRF层的转移矩阵
-def customize_transition_matrix():
-    global num_labels
-    # 获取标签数量
-    num_labels = len(labels_list)
-
-    # 初始化一个大小为 (num_labels, num_labels) 的零矩阵
-    transition_matrix = torch.zeros(num_labels, num_labels)
-
-    # 遍历所有标签的组合，检查合法性
-    for i, label_from in enumerate(labels_list):
-        for j, label_to in enumerate(labels_list):
-            # 根据BIO规则检查是否为合法转移
-            if not is_valid_transition(label_from, label_to):
-                # 对于非法转移，设置为一个小的正值
-                transition_matrix[i][j] = 1  # 非法转移的低分数
-            else:
-                # 对于合法转移，设置为一个较大的正值
-                transition_matrix[i][j] = 96.0  # 合法转移的高分数
-
-    # 将自定义的转移矩阵赋值给 CRF 模型的 transitions 参数
-    crf_model.transitions = nn.Parameter(transition_matrix.to(device))
-
-    # 打印确认信息
-    print("已设置CRF模型的转移矩阵以消除BIO违例")
 
 
 # 主函数
@@ -283,47 +322,28 @@ if __name__ == "__main__":
     # 读取数据，使用实验课的数据集
     # data = pd.read_csv('ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
     # 真正在Google Colab中运行使用以下路径 todo 修改路径
-    data = pd.read_csv('/content/sample_data/ner_dataset.csv', encoding='latin1', on_bad_lines='skip')
+    file_path = '/content/sample_data/ner_dataset.csv'
+    # file_path = 'ner_dataset.csv'  # 根据实际路径修改
 
-    # 使用前向填充填补空的'Sentence #'列
-    data['Sentence #'] = data['Sentence #'].ffill()
-
-    # 将非字符串的单词和标签替换为缺失标记'O'
-    data['Word'] = data['Word'].fillna('O').astype(str)
-    data['Tag'] = data['Tag'].fillna('O').astype(str)
-
-    # 数据预处理
-    sentences = data.groupby('Sentence #')['Word'].apply(list).values
-    labels = data.groupby('Sentence #')['Tag'].apply(list).values
-
-    # 将句子和标签存入DataFrame，fixme: notice separator = '|||'
-    separator = '|||'
-    df = pd.DataFrame({
-        'sentence': [separator.join(s) for s in sentences],
-        'word_labels': [separator.join(l) for l in labels]
-    })
-    # 测试df是否正确
-    print("The sentence in df are:")
-    print(df['sentence'])
-    print("The word_labels in df are:")
-    print(df['word_labels'])
-
-    # 划分训练集和测试集
-    train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-
-    MAX_LEN = 128
-    # todo 修改BATCH_SIZE,如果在PC上跑，该数字为24，如果在Google Colab上跑，该数字为96
-    BATCH_SIZE = 96
+    # 加载并预处理数据
+    train_df, test_df = load_and_preprocess_data(file_path)
 
     # 创建数据集和数据加载器
-    training_set = new_dataset(train_df.reset_index(drop=True), tokenizer, MAX_LEN)
-    testing_set = new_dataset(test_df.reset_index(drop=True), tokenizer, MAX_LEN)
+    testing_set = Dataset.from_pandas(test_df)
+    # 打印数据集大小
+    print(f"测试数据集规模: {len(testing_set)}")
 
-    train_params = {'batch_size': BATCH_SIZE, 'shuffle': True, 'num_workers': 0, 'collate_fn': collate_fn}
-    test_params = {'batch_size': BATCH_SIZE, 'shuffle': False, 'num_workers': 0, 'collate_fn': collate_fn}
+    # 应用分词和标签对齐（使用更新的函数）
+    testing_set = testing_set.map(tokenize_and_align_labels, batched=True)
 
-    training_loader = DataLoader(training_set, **train_params)
-    testing_loader = DataLoader(testing_set, **test_params)
+    # 设置格式为 PyTorch 张量
+    testing_set.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+
+    # todo 修改BATCH_SIZE,如果在PC上跑，该数字为24，如果在Google Colab上跑，该数字为96
+    BATCH_SIZE = 96  # 根据实际情况调整
+
+    # 创建数据加载器
+    testing_loader = DataLoader(testing_set, batch_size=BATCH_SIZE)
 
     # 初始化Bert模型
     num_labels = len(labels_to_ids)
@@ -333,23 +353,34 @@ if __name__ == "__main__":
     # 加载已训练的Bert模型权重 todo 如在Google Colab上运行，需要修改路径
     # saved_state_dict = torch.load('model_weights.pth', map_location=device)
     saved_state_dict = torch.load('/content/model_weights.pth', map_location=device)
-
     model.load_state_dict(saved_state_dict)
     print("已成功加载训练好的Bert模型权重")
-
-    # 初始化CRF层
-    crf_model = CRF(num_labels)
-    crf_model.to(device)
 
     # 创建BIO标签列表
     labels_list = [ids_to_labels[i] for i in range(len(ids_to_labels))]
 
-    # 设置CRF层的转移矩阵
-    customize_transition_matrix()
-
     # 验证模型
     print("\n========= 验证模型 =========")
-    labels_list, preds_list = crf_valid(model, crf_model, testing_loader)
+    labels_list_eval, preds_list = crf_valid(model, testing_loader)
+
+    # 生成分类报告
+    report = classification_report(
+        labels_list_eval,
+        preds_list,
+        zero_division=0
+    )
+    print("\n========= 分类报告（使用CRF模型） =========")
+    print(report)
+
+    # 计算 F1 分数
+    f1 = f1_score(labels_list_eval, preds_list)
+    print(f"\n========= F1 分数 =========")
+    print(f"F1 分数: {f1:.4f}")
+
+    # 计算准确率
+    accuracy = accuracy_score(labels_list_eval, preds_list)
+    print(f"\n========= 准确率 =========")
+    print(f"准确率: {accuracy:.4f}")
 
     # 统计BIO规则违例
     print("\n========= 统计BIO规则违例 =========")
@@ -358,18 +389,3 @@ if __name__ == "__main__":
     print(f"BIO规则违例数: {violations}")
     print(f"预测标签总数: {total_preds}")
     print(f"BIO规则违例比例: {violation_ratio:.4f}")
-
-    # 生成分类报告
-    flattened_true_labels = [label for sublist in labels_list for label in sublist]
-    flattened_predictions = [pred for sublist in preds_list for pred in sublist]
-    unique_labels = sorted(set(flattened_true_labels + flattened_predictions))
-
-    report = classification_report(
-        flattened_true_labels,
-        flattened_predictions,
-        labels=unique_labels,
-        target_names=unique_labels,
-        zero_division=0
-    )
-    print("\n========= 分类报告（使用CRF模型） =========")
-    print(report)

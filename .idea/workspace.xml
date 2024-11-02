@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question1.py" beforeDir="false" afterPath="$PROJECT_DIR$/question1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question1_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question1_result.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question4.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question4_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question4_result.md" afterDir="false" />
-    </list>
+    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,7 +26,7 @@
     </option>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="debug_info" />
+        <entry key="$PROJECT_DIR$" value="master" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -68,7 +62,7 @@
     &quot;Python.question2_model_testing.executor&quot;: &quot;Run&quot;,
     &quot;Python.question3.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -196,10 +190,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question3" />
         <item itemvalue="Python.question2_model_testing" />
         <item itemvalue="Python.question2" />
+        <item itemvalue="Python.question1" />
         <item itemvalue="Python.question3" />
       </list>
     </recent_temporary>
@@ -231,6 +225,8 @@
       <workItem from="1730285153704" duration="4035000" />
       <workItem from="1730377151596" duration="4806000" />
       <workItem from="1730425724014" duration="8170000" />
+      <workItem from="1730518605273" duration="13901000" />
+      <workItem from="1730532990745" duration="1542000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -304,7 +300,39 @@
       <option name="project" value="LOCAL" />
       <updated>1730441389267</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.">
+      <option name="closed" value="true" />
+      <created>1730528441563</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1730528441563</updated>
+    </task>
+    <task id="LOCAL-00011" summary="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.">
+      <option name="closed" value="true" />
+      <created>1730528470268</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1730528470268</updated>
+    </task>
+    <task id="LOCAL-00012" summary="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.">
+      <option name="closed" value="true" />
+      <created>1730532160502</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1730532160503</updated>
+    </task>
+    <task id="LOCAL-00013" summary="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.">
+      <option name="closed" value="true" />
+      <created>1730532859126</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1730532859126</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -336,7 +364,12 @@
     <MESSAGE value="complete question3(with debug info)&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="complete question3(with debug info)" />
     <MESSAGE value="fix some small bugs and conduct result complement" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix some small bugs and conduct result complement" />
+    <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the Data" />
+    <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
+    <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure." />
+    <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
+    <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
+    <option name="LAST_COMMIT_MESSAGE" value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
@@ -353,6 +386,16 @@
           <url>file://$PROJECT_DIR$/question1.py</url>
           <line>118</line>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question3.py</url>
+          <line>363</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question2.py</url>
+          <line>243</line>
+          <option name="timeStamp" value="5" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

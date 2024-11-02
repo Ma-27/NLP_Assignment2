@@ -268,3 +268,106 @@ BIO规则违例数: 914
 BIO规则违例比例: 0.0036
 
 ```
+
+## 2024.11 版本结果
+
+#### 训练+测试结果
+
+```
+========= Question4 =========
+/usr/local/lib/python3.10/dist-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
+  warnings.warn(
+The sentence in df are:
+0        [Thousands, of, demonstrators, have, marched, ...
+1        [Iranian, officials, say, they, expect, to, ge...
+2        [Helicopter, gunships, Saturday, pounded, mili...
+3        [They, left, after, a, tense, hour-long, stand...
+4        [U.N., relief, coordinator, Jan, Egeland, said...
+                               ...                        
+47954    [Opposition, leader, Mir, Hossein, Mousavi, ha...
+47955    [On, Thursday, ,, Iranian, state, media, publi...
+47956    [Following, Iran, 's, disputed, June, 12, elec...
+47957    [Since, then, ,, authorities, have, held, publ...
+47958    [The, United, Nations, is, praising, the, use,...
+Name: words, Length: 47959, dtype: object
+The word_labels in df are:
+0        [O, O, O, O, O, O, B-geo, O, O, O, O, O, B-geo...
+1        [B-gpe, O, O, O, O, O, O, O, O, O, O, O, O, O,...
+2        [O, O, B-tim, O, O, O, O, O, B-geo, O, O, O, O...
+3                        [O, O, O, O, O, O, O, O, O, O, O]
+4        [B-geo, O, O, B-per, I-per, O, B-tim, O, B-geo...
+                               ...                        
+47954    [O, O, O, B-per, I-per, O, O, O, O, O, O, O, O...
+47955    [O, B-tim, O, B-gpe, O, O, O, O, O, O, O, O, B...
+47956    [O, B-geo, O, O, B-tim, I-tim, O, O, O, O, O, ...
+47957    [O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, ...
+47958    [O, B-org, I-org, O, O, O, O, O, O, O, O, O, O...
+Name: labels, Length: 47959, dtype: object
+训练数据集规模: 38367
+测试数据集规模: 9592
+Map: 100%
+ 38367/38367 [00:11<00:00, 3236.79 examples/s]
+Map: 100%
+ 9592/9592 [00:02<00:00, 3299.61 examples/s]
+Some weights of BertForTokenClassification were not initialized from the model checkpoint at bert-base-uncased and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+第一个训练批次的Key: dict_keys(['labels', 'input_ids', 'attention_mask'])
+第一个训练批次 'input_ids' shape: torch.Size([84, 128])
+第一个训练批次 batch 'labels' shape: torch.Size([84, 128])
+/usr/local/lib/python3.10/dist-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+模型初始化，使用 19 个标签.
+模型使用  cuda 设备.
+
+========= 训练Epoch 1 =========
+训练中: 100%|██████████| 457/457 [03:45<00:00,  2.03it/s]
+平均训练损失: 6.6241
+
+========= 训练Epoch 2 =========
+训练中: 100%|██████████| 457/457 [03:45<00:00,  2.02it/s]
+平均训练损失: 3.2163
+
+========= 训练Epoch 3 =========
+训练中: 100%|██████████| 457/457 [03:45<00:00,  2.03it/s]
+平均训练损失: 2.5832
+
+========= 训练Epoch 4 =========
+训练中: 100%|██████████| 457/457 [03:45<00:00,  2.03it/s]
+平均训练损失: 2.0620
+
+========= 训练Epoch 5 =========
+训练中: 100%|██████████| 457/457 [03:44<00:00,  2.03it/s]
+平均训练损失: 1.6503
+包含CRF层的模型权重已保存
+
+========= 验证模型 =========
+
+========= 分类报告（使用BERT与CRF混合模型） =========
+              precision    recall  f1-score   support
+
+         art       0.20      0.16      0.18        94
+         eve       0.29      0.24      0.26        70
+         geo       0.82      0.91      0.86      7558
+         gpe       0.96      0.94      0.95      3142
+         nat       0.44      0.35      0.39        40
+         org       0.68      0.63      0.66      4151
+         per       0.76      0.80      0.78      3400
+         tim       0.86      0.88      0.87      4077
+
+   micro avg       0.81      0.83      0.82     22532
+   macro avg       0.63      0.61      0.62     22532
+weighted avg       0.81      0.83      0.82     22532
+
+
+========= F1 分数 =========
+F1 分数: 0.8211
+
+========= 准确率 =========
+准确率: 0.9631
+
+========= 统计BIO规则违例 =========
+BIO规则违例数: 662
+预测标签总数: 254887
+BIO规则违例比例: 0.0026
+
+```
