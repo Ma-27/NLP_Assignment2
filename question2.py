@@ -36,6 +36,33 @@ labels_to_ids = {
 ids_to_labels = {id: label for label, id in labels_to_ids.items()}
 
 
+# 定义BIO规则转移矩阵的函数
+def is_valid_transition(label_from, label_to):
+    # 如果当前标签为 'O' (Outside)，则下一个标签必须是 'O' 或 'B-' 开头的标签（新的实体的开始）
+    if label_from == 'O':
+        return label_to == 'O' or label_to.startswith('B-')
+
+    # 如果当前标签以 'B-' 开头（表示实体的开始），则下一个标签有三种可能：
+    # 1. 'O'：结束实体并回到 Outside
+    # 2. 另一个 'B-'：表示开始一个新的实体
+    # 3. 对应的 'I-' 标签：表示继续同一类型的实体
+    elif label_from.startswith('B-'):
+        tag_from = label_from[2:]  # 获取当前标签的实体类型
+        return label_to == 'O' or label_to.startswith('B-') or (label_to.startswith('I-') and label_to[2:] == tag_from)
+
+    # 如果当前标签以 'I-' 开头（表示实体的内部），则下一个标签也有三种可能：
+    # 1. 'O'：结束当前实体并回到 Outside
+    # 2. 另一个 'B-'：表示开始一个新的实体
+    # 3. 对应的 'I-' 标签：继续当前类型的实体
+    elif label_from.startswith('I-'):
+        tag_from = label_from[2:]  # 获取当前标签的实体类型
+        return label_to == 'O' or label_to.startswith('B-') or (label_to.startswith('I-') and label_to[2:] == tag_from)
+
+    # 如果当前标签不属于上述任何一种情况，则认为是非法的
+    else:
+        return False
+
+
 # 定义数据集类
 class new_dataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_len):
@@ -214,11 +241,9 @@ def BIO_violations(predictions):
 
         # 遍历当前序列的每个标签
         for label in pred_sequence:
-            if label.startswith('I-'):
-                # 检查当前标签是否违反BIO规则,todo 只检查了I-标签是否接在正确的B-或I-标签之后，未检查其他的
-                if not (previous_label.endswith(label[2:]) and (
-                        previous_label.startswith('B-') or previous_label.startswith('I-'))):
-                    violations += 1  # 若违反规则，违例计数增加
+            # 检查从 previous_label 到当前 label 的转移是否符合BIO规则
+            if not is_valid_transition(previous_label, label):
+                violations += 1  # 若违反规则，违例计数增加
 
             # 更新上一个标签为当前标签
             previous_label = label

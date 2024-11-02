@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question3.py" beforeDir="false" afterPath="$PROJECT_DIR$/question3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question3_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question3_result.md" afterDir="false" />
-    </list>
+    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -59,23 +55,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.question1.executor": "Run",
-    "Python.question2.executor": "Run",
-    "Python.question2_model_testing.executor": "Run",
-    "Python.question3.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "develop",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.question1.executor&quot;: &quot;Run&quot;,
+    &quot;Python.question2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.question2_model_testing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.question3.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.question1">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Assignment2" />
@@ -229,7 +225,8 @@
       <workItem from="1730285153704" duration="4035000" />
       <workItem from="1730377151596" duration="4806000" />
       <workItem from="1730425724014" duration="8170000" />
-      <workItem from="1730518605273" duration="13828000" />
+      <workItem from="1730518605273" duration="13901000" />
+      <workItem from="1730532990745" duration="1542000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -327,7 +324,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730532160503</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.">
+      <option name="closed" value="true" />
+      <created>1730532859126</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1730532859126</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -362,6 +367,7 @@
     <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the Data" />
     <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure." />
+    <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
     <option name="LAST_COMMIT_MESSAGE" value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
@@ -383,8 +389,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/question3.py</url>
-          <line>367</line>
+          <line>363</line>
           <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question2.py</url>
+          <line>243</line>
+          <option name="timeStamp" value="5" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
