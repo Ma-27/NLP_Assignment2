@@ -1,7 +1,7 @@
 import pandas as pd
 import torch
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import classification_report
+# 注意这里
+from seqeval.metrics import classification_report, f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
@@ -261,13 +261,9 @@ if __name__ == '__main__':
     print("\n========= 验证模型 =========")
     labels_list, preds_list = new_valid(model, testing_loader)
 
-    # 将 labels_list 和 preds_list 展平成一个列表
-    flattened_true_labels = [label for sublist in labels_list for label in sublist]
-    flattened_predictions = [pred for sublist in preds_list for pred in sublist]
-    print("\n展平标签和预测")
-
     # 获取数据中的唯一标签
-    unique_labels = sorted(set(flattened_true_labels + flattened_predictions))
+    unique_labels = sorted({label for sequence in labels_list for label in sequence} |
+                           {label for sequence in preds_list for label in sequence})
 
     # 打印数据中唯一标签的数量
     print(f"数据中的唯一标签数量: {len(unique_labels)}")
@@ -276,12 +272,21 @@ if __name__ == '__main__':
     report = classification_report(
         flattened_true_labels,
         flattened_predictions,
-        labels=unique_labels,
-        target_names=unique_labels,
         zero_division=0
     )
     print("\n========= 分类报告 =========")
     print(report)
+
+    # 计算并打印F1分数和准确率
+    # 计算 F1 分数
+    f1 = f1_score(flattened_true_labels, flattened_predictions)
+    print(f"\n========= F1 分数 =========")
+    print(f"F1 分数: {f1:.4f}")
+
+    # 计算准确率
+    accuracy = accuracy_score(flattened_true_labels, flattened_predictions)
+    print(f"\n========= 准确率 =========")
+    print(f"准确率: {accuracy:.4f}")
 
     # 统计BIO规则违例
     print("\n========= 统计BIO规则违例 =========")

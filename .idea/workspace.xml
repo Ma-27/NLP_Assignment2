@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="" />
+    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question2.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question2_model_testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2_model_testing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question2_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question2_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question4_model_testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4_model_testing.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,6 +23,14 @@
       </list>
     </option>
   </component>
+  <component name="Git.Merge.Settings">
+    <option name="BRANCH" value="develop" />
+    <option name="OPTIONS">
+      <set>
+        <option value="NO_FF" />
+      </set>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="PREVIOUS_COMMIT_AUTHORS">
       <list>
@@ -26,7 +40,7 @@
     </option>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="master" />
+        <entry key="$PROJECT_DIR$" value="develop" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -62,7 +76,7 @@
     &quot;Python.question2_model_testing.executor&quot;: &quot;Run&quot;,
     &quot;Python.question3.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -227,6 +241,7 @@
       <workItem from="1730425724014" duration="8170000" />
       <workItem from="1730518605273" duration="13901000" />
       <workItem from="1730532990745" duration="1542000" />
+      <workItem from="1730624872206" duration="5179000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
