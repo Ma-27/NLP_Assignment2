@@ -4,12 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.">
+    <list default="true" id="b60c7cd0-3d1f-4bff-b34d-069eb0b5d5f7" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question2.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question2_model_testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/question2_model_testing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/question2_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question2_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question3.py" beforeDir="false" afterPath="$PROJECT_DIR$/question3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question3_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question3_result.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question4.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/question4_model_testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/question4_model_testing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/question4_result.md" beforeDir="false" afterPath="$PROJECT_DIR$/question4_result.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +84,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -215,8 +217,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PY-241.19072.16" />
-        <option value="bundled-python-sdk-8336bb23522e-2767605e8bc2-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.19072.16" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-PY-242.23726.102" />
+        <option value="bundled-python-sdk-5e1850174b45-399fe30bd8c1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-242.23726.102" />
       </set>
     </attachedChunks>
   </component>
@@ -242,6 +244,14 @@
       <workItem from="1730518605273" duration="13901000" />
       <workItem from="1730532990745" duration="1542000" />
       <workItem from="1730624872206" duration="5179000" />
+      <workItem from="1730630769865" duration="676000" />
+      <workItem from="1730792619131" duration="1356000" />
+      <workItem from="1730806656470" duration="1261000" />
+      <workItem from="1730814170752" duration="15000" />
+      <workItem from="1730879099567" duration="1492000" />
+      <workItem from="1730881592531" duration="673000" />
+      <workItem from="1730965013040" duration="228000" />
+      <workItem from="1730966665771" duration="2694000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -347,7 +357,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730532859126</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="fix dependency problem in q2.">
+      <option name="closed" value="true" />
+      <created>1730630830218</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1730630830218</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -384,7 +402,9 @@
     <MESSAGE value="modify question4.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure." />
     <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output.&#10;&#10;Signed-off-by: Mamh &lt;mamhsl@163.com&gt;" />
     <MESSAGE value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
-    <option name="LAST_COMMIT_MESSAGE" value="modify question3.py with identical changes.&#10;1. use sklearn to produce classification_report.&#10;2. deprive the DataSet class and use library.&#10;3. add more factors to evaluate result.&#10;4. restructure.&#10;5. using self-defined viterbi function to force eliminate error output." />
+    <MESSAGE value="f" />
+    <MESSAGE value="fix dependency problem in q2." />
+    <option name="LAST_COMMIT_MESSAGE" value="fix dependency problem in q2." />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
@@ -404,13 +424,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/question3.py</url>
-          <line>363</line>
+          <line>380</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/question2.py</url>
           <line>243</line>
           <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question4_model_testing.py</url>
+          <line>346</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/question4_model_testing.py</url>
+          <line>230</line>
+          <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

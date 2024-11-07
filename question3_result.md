@@ -219,6 +219,8 @@ You should probably TRAIN this model on a down-stream task to be able to use it 
 已成功加载训练好的Bert模型权重
 
 ========= 验证模型 =========
+Validation Loss: 0.19225080087780952
+Validation Accuracy: 0.9641174324308419
 
 ========= 分类报告（使用CRF模型） =========
               precision    recall  f1-score   support

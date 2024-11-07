@@ -254,6 +254,8 @@ def crf_valid(model, testing_loader):
     model.eval()
 
     eval_preds, eval_labels = [], []
+    eval_loss = 0.0
+    nb_eval_steps = 0
 
     with torch.no_grad():
         for idx, batch in enumerate(testing_loader):
@@ -261,11 +263,16 @@ def crf_valid(model, testing_loader):
             mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
 
-            # 获取Bert模型的输出
-            outputs = model(input_ids=ids, attention_mask=mask)
+            # 获取Bert模型的输出，添加 labels 参数以计算损失
+            outputs = model(input_ids=ids, attention_mask=mask, labels=labels)
 
-            # 获取发射分数
+            # 获取发射分数和损失
             emissions = outputs.logits  # (batch_size, seq_len, num_labels)
+            loss = outputs.loss
+
+            # 累加损失和步数
+            eval_loss += loss.item()
+            nb_eval_steps += 1
 
             # 使用自定义解码函数获取预测结果
             predictions = viterbi_decode_with_constraints(emissions, mask)
@@ -297,6 +304,16 @@ def crf_valid(model, testing_loader):
                 # 将当前句子的 true labels 和 predictions 添加到全部的列表中
                 eval_labels.append(true_labels)
                 eval_preds.append(pred_labels)
+
+    # 计算平均损失
+    eval_loss = eval_loss / nb_eval_steps
+
+    # 计算准确率
+    eval_accuracy = accuracy_score(eval_labels, eval_preds)
+
+    # 打印验证损失和验证准确率
+    print(f"Validation Loss: {eval_loss}")
+    print(f"Validation Accuracy: {eval_accuracy}")
 
     # 返回未展平的标签列表，适用于 seqeval.metrics
     return eval_labels, eval_preds

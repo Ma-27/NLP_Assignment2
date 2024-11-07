@@ -228,12 +228,18 @@ def joint_model_valid(model, dataloader, device):
     # 将模型设置为评估模式
     model.eval()
     eval_preds, eval_labels = [], []
+    total_loss = 0
 
     with torch.no_grad():
         for idx, batch in enumerate(dataloader):
             ids = batch['input_ids'].to(device)
             mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
+
+            # 计算损失
+            loss = model(input_ids=ids, attention_mask=mask, labels=labels)
+            loss = loss.mean()  # 对损失进行平均处理
+            total_loss += loss.item()
 
             # 获取模型预测结果
             predictions = model(input_ids=ids, attention_mask=mask)
@@ -264,6 +270,15 @@ def joint_model_valid(model, dataloader, device):
                 # 将当前句子的 true labels 和 predictions 添加到全部的列表中
                 eval_labels.append(true_labels)
                 eval_preds.append(pred_labels)
+
+    # 计算平均损失
+    eval_loss = total_loss / len(dataloader)
+    # 计算准确率
+    eval_accuracy = accuracy_score(eval_labels, eval_preds)
+
+    # 打印验证损失和准确率
+    print(f"Validation Loss: {eval_loss}")
+    print(f"Validation Accuracy: {eval_accuracy}")
 
     # 返回未展平的标签列表，适用于 seqeval.metrics
     return eval_labels, eval_preds
@@ -319,7 +334,7 @@ if __name__ == "__main__":
     # fixme 批次大小，在PC上调试设置为36，Google Colab上设置为84
     BATCH_SIZE = 84
     # fixme 训练轮次，调试时可以设置为1
-    EPOCHS = 1
+    EPOCHS = 5
 
     # 创建数据集和数据加载器
     training_set = Dataset.from_pandas(train_df)
